@@ -25,7 +25,7 @@ public class App extends Application {
 
             SplitPane splitView = new SplitPane();
             splitView.getItems().add(new FileTree());
-            splitView.getItems().add(new FileTable());
+            splitView.getItems().add(new FileTableOld());
             splitView.setDividerPositions(0.25);
 
             BorderPane root = new BorderPane();

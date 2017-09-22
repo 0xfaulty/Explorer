@@ -13,12 +13,16 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.util.Callback;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
+import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -45,6 +49,7 @@ public class FileTable extends BorderPane {
 
         //treeTableView.getStylesheets().addAll("css/hidden-headers.css");
         //treeTableView.getStylesheets().addAll(".column-header-background { visibility: hidden; -fx-padding: -1em; }");
+        treeTableView.getStylesheets().addAll("css/table.css");
 
         treeTableView.setShowRoot(true);
         treeTableView.setRoot(root);
@@ -107,14 +112,7 @@ public class FileTable extends BorderPane {
             String s = item.isLeaf() ? readableSize(item.length(), false) : "";
             return new ReadOnlyObjectWrapper<>(s);
         });
-
-        Callback<TreeTableColumn<File, String>, TreeTableCell<File, String>> sizeCellFactory = sizeColumn.getCellFactory();
-        sizeColumn.setCellFactory(column -> {
-            TreeTableCell<File, String> cell = sizeCellFactory.call(column);
-            cell.setAlignment(Pos.CENTER_RIGHT);
-            cell.setPadding(new Insets(0, 8, 0, 0));
-            return cell;
-        });
+        setPosAligment(sizeColumn, Pos.CENTER_LEFT);
 
         sizeColumn.setMinWidth(minColumnSize);
         sizeColumn.setPrefWidth(100);
@@ -124,9 +122,11 @@ public class FileTable extends BorderPane {
         TreeTableColumn<File, String> typeColumn = new TreeTableColumn<>("Тип");
         typeColumn.setCellValueFactory(cellData -> {
             FileTreeItem item = (FileTreeItem) cellData.getValue();
-            String s = "Тут тип";
+            JFileChooser j = new JFileChooser();
+            String s = j.getTypeDescription(item.getValue());
             return new ReadOnlyObjectWrapper<>(s);
         });
+        setPosAligment(typeColumn, Pos.CENTER_LEFT);
 
         typeColumn.setMinWidth(minColumnSize);
         typeColumn.setPrefWidth(130);
@@ -139,6 +139,7 @@ public class FileTable extends BorderPane {
             String s = dateFormat.format(new Date(item.lastModified()));
             return new ReadOnlyObjectWrapper<>(s);
         });
+        setPosAligment(lastModifiedColumn, Pos.CENTER_LEFT);
 
         lastModifiedColumn.setMinWidth(minColumnSize);
         lastModifiedColumn.setPrefWidth(130);
@@ -157,6 +158,16 @@ public class FileTable extends BorderPane {
 
         this.setCenter(treeTableView);
         this.setMinWidth(200);
+    }
+
+    private void setPosAligment(TreeTableColumn<File, String> col, Pos pos){
+        Callback<TreeTableColumn<File, String>, TreeTableCell<File, String>> cellFactory = col.getCellFactory();
+        col.setCellFactory(column -> {
+            TreeTableCell<File, String> cell = cellFactory.call(column);
+            cell.setAlignment(pos);
+            cell.setPadding(new Insets(0, 0, 0, 20));
+            return cell;
+        });
     }
 
     private Image getImageResource(String name) {

@@ -48,5 +48,4 @@ public class Person {
     public void setLikes(String likes) {
         this.likes.set(likes);
     }
-
 }
