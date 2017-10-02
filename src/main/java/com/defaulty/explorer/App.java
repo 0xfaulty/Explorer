@@ -1,5 +1,7 @@
 package com.defaulty.explorer;
 
+import com.defaulty.explorer.control.ThemeType;
+import com.defaulty.explorer.control.ViewObserverImpl;
 import com.defaulty.explorer.panels.*;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -17,15 +19,30 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
+            ViewObserverImpl fileViewableImpl = new ViewObserverImpl();
+
             VBox menus = new VBox();
-            menus.getChildren().addAll(new TopMenuBar(), new TopToolBar());
+            TopToolBar topToolBar = new TopToolBar(fileViewableImpl);
+            menus.getChildren().addAll(new TopMenuBar(fileViewableImpl), topToolBar);
 
             Image image = new Image(App.class.getClassLoader().getResourceAsStream("icons/closef.png"));
             primaryStage.getIcons().add(image);
 
             SplitPane splitView = new SplitPane();
-            splitView.getItems().add(new FileTree());
-            splitView.getItems().add(new FileTableOld());
+            FolderTree folderTree = new FolderTree(fileViewableImpl);
+            FileTable fileTable = new FileTable(fileViewableImpl);
+
+            fileViewableImpl.register(folderTree);
+            fileViewableImpl.register(fileTable);
+            fileViewableImpl.register(topToolBar);
+
+            fileViewableImpl.setTheme(ThemeType.LIGHT);
+
+            fileTable.init();
+            folderTree.init();
+            topToolBar.init();
+
+            splitView.getItems().addAll(folderTree, fileTable);
             splitView.setDividerPositions(0.25);
 
             BorderPane root = new BorderPane();

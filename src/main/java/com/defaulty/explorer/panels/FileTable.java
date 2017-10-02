@@ -1,77 +1,46 @@
 package com.defaulty.explorer.panels;
 
-import com.defaulty.explorer.App;
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.embed.swing.SwingFXUtils;
+import com.defaulty.explorer.control.IconSetter;
+import com.defaulty.explorer.control.ThemeType;
+import com.defaulty.explorer.control.ViewObserver;
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.Label;
-import javafx.scene.control.TreeTableCell;
-import javafx.scene.control.TreeTableColumn;
-import javafx.scene.control.TreeTableView;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.util.Callback;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 
-import javax.swing.*;
-import javax.swing.filechooser.FileSystemView;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
-public class FileTable extends BorderPane {
+public class FileTable extends BorderPane implements ViewObserver {
 
-    private static FileSystemView fsv = FileSystemView.getFileSystemView();
+    private final ViewObserver viewObserver;
+    private TableView<TreeItem<File>> table = new TableView<>();
 
-    private SimpleDateFormat dateFormat = new SimpleDateFormat();
-    private NumberFormat numberFormat = NumberFormat.getIntegerInstance();
-    private Map<String, ImageView> iconCache = new HashMap<>();
+    public FileTable(ViewObserver observer) {
+        this.viewObserver = observer;
+    }
 
-    private final static int minColumnSize = 100;
+    public void init() {
+        TableColumn<TreeItem<File>, TreeItem<File>> nameCol = getColumn("Имя", "itemName", 200);
+        TableColumn<TreeItem<File>, String> sizeCol = getColumn("Размер", "itemSize", 100);
+        TableColumn<TreeItem<File>, String> typeCol = getColumn("Тип", "itemType", 150);
+        TableColumn<TreeItem<File>, String> changeDateCol = getColumn("Дата", "itemData", 200);
 
-    public FileTable() {
-        String startDir = System.getProperty("user.dir");
-        FileTreeItem root = new FileTreeItem(new File(startDir));
+        nameCol.setComparator((TreeItem<File> ti1, TreeItem<File> ti2) -> {
+            if (ti1.getValue().isDirectory() == ti2.getValue().isDirectory()) {
+                if (ti1.getValue() == null || ti2.getValue() == null) return 0;
+                return ti1.getValue().getName().compareToIgnoreCase(ti2.getValue().getName());
+            } else
+                return ti1.getValue().isDirectory() ? -1 : 1;
+        });
 
-        final TreeTableView<File> treeTableView = new TreeTableView<>();
-
-        //String s = getStringResource("hidden-headers.css");
-
-        //treeTableView.getStylesheets().addAll("css/hidden-headers.css");
-        //treeTableView.getStylesheets().addAll(".column-header-background { visibility: hidden; -fx-padding: -1em; }");
-        treeTableView.getStylesheets().addAll("css/table.css");
-
-        treeTableView.setShowRoot(true);
-        treeTableView.setRoot(root);
-        root.setExpanded(true);
-        treeTableView.setColumnResizePolicy(TreeTableView.CONSTRAINED_RESIZE_POLICY);
-
-        TreeTableColumn<File, FileTreeItem> nameColumn = new TreeTableColumn<>("Имя");
-
-        nameColumn.setCellValueFactory(cellData ->
-                new ReadOnlyObjectWrapper<>((FileTreeItem) cellData.getValue())
-        );
-
-        Image image2 = getImageResource("icons/openf.png");
-        Image image3 = getImageResource("icons/closef.png");
-
-        nameColumn.setCellFactory(column -> new TreeTableCell<File, FileTreeItem>() {
-
-            ImageView imageView2 = new ImageView(image2);
-            ImageView imageView3 = new ImageView(image3);
-
+        nameCol.setCellFactory(column -> new TableCell<TreeItem<File>, TreeItem<File>>() {
             @Override
-            protected void updateItem(FileTreeItem item, boolean empty) {
+            protected void updateItem(TreeItem<File> item, boolean empty) {
                 super.updateItem(item, empty);
 
                 if (item == null || empty || item.getValue() == null) {
@@ -80,124 +49,95 @@ public class FileTable extends BorderPane {
                     setStyle("");
                 } else {
                     File f = item.getValue();
-                    String text = f.getParentFile() == null ? File.separator : f.getName();
-                    setText(text);
-                    //String style = item.isHidden() && f.getParentFile() != null ? "-fx-accent" : "-fx-text-base-color";
-                    String style = "-fx-text-base-color";
-                    setStyle("-fx-text-fill: " + style);
+                    setText(f.getParentFile() == null ? File.separator : f.getName());
+                    setGraphic(IconSetter.getImageView(item));
+                }
+            }
+        });
 
-                    if (item.isDirectory()) {
-                        setGraphic(item.isExpanded() ? imageView2 : imageView3);
-                    } else {
-                        ImageView imageView = iconCache.get(f.getName());
-                        if (imageView == null) {
-                            imageView = getFileIcon(f);
-                            iconCache.put(f.getName(), imageView);
-                        }
-                        setGraphic(imageView);
+        table.getColumns().add(nameCol);
+        table.getColumns().add(sizeCol);
+        table.getColumns().add(typeCol);
+        table.getColumns().add(changeDateCol);
+        table.getSortOrder().add(nameCol);
+        table.setOnMouseClicked(mouseEvent -> {
+            if (mouseEvent.getClickCount() == 2) {
+                TreeItem<File> item = table.getSelectionModel().getSelectedItem();
+                if (item != null && item instanceof FolderTreeItem) {
+                    if (((FolderTreeItem) item).isDirectory()) {
+                        FolderTreeItem ftItem = (FolderTreeItem) item;
+                        ftItem.createExpandTreeFork();
+                        viewObserver.changeNode(item);
                     }
                 }
             }
         });
 
-        nameColumn.setMinWidth(minColumnSize);
-        nameColumn.setPrefWidth(300);
-        nameColumn.setSortable(false);
-        treeTableView.getColumns().add(nameColumn);
+        disableColumnUnsortedOnClick(table);
 
-        TreeTableColumn<File, String> sizeColumn = new TreeTableColumn<>("Размер");
-
-        sizeColumn.setCellValueFactory(cellData -> {
-            FileTreeItem item = ((FileTreeItem) cellData.getValue());
-            String s = item.isLeaf() ? readableSize(item.length(), false) : "";
-            return new ReadOnlyObjectWrapper<>(s);
-        });
-        setPosAligment(sizeColumn, Pos.CENTER_LEFT);
-
-        sizeColumn.setMinWidth(minColumnSize);
-        sizeColumn.setPrefWidth(100);
-        sizeColumn.setSortable(true);
-        treeTableView.getColumns().add(sizeColumn);
-
-        TreeTableColumn<File, String> typeColumn = new TreeTableColumn<>("Тип");
-        typeColumn.setCellValueFactory(cellData -> {
-            FileTreeItem item = (FileTreeItem) cellData.getValue();
-            JFileChooser j = new JFileChooser();
-            String s = j.getTypeDescription(item.getValue());
-            return new ReadOnlyObjectWrapper<>(s);
-        });
-        setPosAligment(typeColumn, Pos.CENTER_LEFT);
-
-        typeColumn.setMinWidth(minColumnSize);
-        typeColumn.setPrefWidth(130);
-        typeColumn.setSortable(true);
-        treeTableView.getColumns().add(typeColumn);
-
-        TreeTableColumn<File, String> lastModifiedColumn = new TreeTableColumn<>("Дата");
-        lastModifiedColumn.setCellValueFactory(cellData -> {
-            FileTreeItem item = (FileTreeItem) cellData.getValue();
-            String s = dateFormat.format(new Date(item.lastModified()));
-            return new ReadOnlyObjectWrapper<>(s);
-        });
-        setPosAligment(lastModifiedColumn, Pos.CENTER_LEFT);
-
-        lastModifiedColumn.setMinWidth(minColumnSize);
-        lastModifiedColumn.setPrefWidth(130);
-        lastModifiedColumn.setSortable(true);
-        treeTableView.getColumns().add(lastModifiedColumn);
-
-        TreeTableColumn<File, String> emptyColumn = new TreeTableColumn<>();
-        emptyColumn.setSortable(false);
-        treeTableView.getColumns().add(emptyColumn);
-
-//        treeTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-//            label.setText(newValue != null ? newValue.getValue().getAbsolutePath() : "");
-//        });
-
-        treeTableView.getSelectionModel().selectFirst();
-
-        this.setCenter(treeTableView);
-        this.setMinWidth(200);
+        super.setCenter(table);
     }
 
-    private void setPosAligment(TreeTableColumn<File, String> col, Pos pos){
-        Callback<TreeTableColumn<File, String>, TreeTableCell<File, String>> cellFactory = col.getCellFactory();
+    private <T> void disableColumnUnsortedOnClick(TableView<T> tableView) {
+        tableView.getSortOrder().addListener((ListChangeListener<TableColumn<T, ?>>) c -> {
+            while (c.next()) {
+                if (c.wasRemoved() && c.getRemovedSize() == 1 && !c.wasAdded()) {
+                    final TableColumn<T, ?> removedColumn = c.getRemoved().get(0);
+                    removedColumn.getTableView().getSortOrder().add(removedColumn);
+                    removedColumn.setSortType(TableColumn.SortType.ASCENDING);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void changeNode(TreeItem<File> item) {
+        if (item != null) {
+            table.getItems().clear();
+            for (TreeItem<File> fItem : item.getChildren()) {
+                table.getItems().add(fItem);
+            }
+            if (item instanceof FolderTreeItem) {
+                FolderTreeItem ftItem = (FolderTreeItem) item;
+                for (TreeItem<File> fItem : ftItem.getFileChildrenList()) {
+                    table.getItems().add(fItem);
+                }
+            }
+            table.sort();
+        }
+    }
+
+    @Override
+    public void setTheme(ThemeType t) {
+        switch (t) {
+            case DARK:
+                table.getStylesheets().setAll("css/table-dark.css");
+                break;
+            case LIGHT:
+                table.getStylesheets().setAll("css/table-light.css");
+                break;
+        }
+    }
+
+    private <T1, T2> TableColumn<T1, T2> getColumn(String name, String param, int size) {
+        TableColumn<T1, T2> column = new TableColumn<>(name);
+        column.prefWidthProperty().setValue(size);
+        column.setMinWidth(50);
+        column.setCellValueFactory(new PropertyValueFactory<>(param));
+        setPosAlignment(column);
+        return column;
+    }
+
+    private <T1, T2> void setPosAlignment(TableColumn<T1, T2> col) {
+        Callback<TableColumn<T1, T2>, TableCell<T1, T2>> cellFactory = col.getCellFactory();
         col.setCellFactory(column -> {
-            TreeTableCell<File, String> cell = cellFactory.call(column);
-            cell.setAlignment(pos);
+            TableCell<T1, T2> cell = cellFactory.call(column);
             cell.setPadding(new Insets(0, 0, 0, 20));
             return cell;
         });
     }
 
-    private Image getImageResource(String name) {
-        Image img = null;
-        try {
-            img = new Image(App.class.getClassLoader().getResourceAsStream(name),
-                    20, 20, true, true);
-        } catch (Exception e) {
-        }
-        return img;
-    }
-
-    private ImageView getFileIcon(File file) {
-        javax.swing.Icon icon = fsv.getSystemIcon(file);
-
-        BufferedImage bufferedImage = new BufferedImage(
-                icon.getIconWidth(),
-                icon.getIconHeight(),
-                BufferedImage.TYPE_INT_ARGB
-        );
-        icon.paintIcon(null, bufferedImage.getGraphics(), 0, 0);
-
-        return new ImageView(SwingFXUtils.toFXImage(bufferedImage, null));
-    }
-
-    public static String readableSize(long bytes, boolean si) {
-        int unit = si ? 1000 : 1024;
-        if (bytes < unit) return bytes + " Б";
-        int exp = (int) (Math.log(bytes) / Math.log(unit));
-        String pre = (si ? "кМГТПЭ" : "КМГТПЭ").charAt(exp-1) + ""; // + (si ? "" : "и");
-        return String.format("%.1f %sБ", bytes / Math.pow(unit, exp), pre);
+    @Override
+    public void createFolder() {
     }
 }
