@@ -1,59 +1,55 @@
 package com.defaulty.explorer.panels;
 
-import com.defaulty.explorer.control.IconSetter;
 import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.control.ViewObserver;
+import com.defaulty.explorer.control.ViewType;
+import com.defaulty.explorer.control.observer.ViewConnector;
+import com.defaulty.explorer.control.observer.ViewObserver;
+import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
+import com.defaulty.explorer.control.rescontrol.image.ImageSizePack;
+import com.defaulty.explorer.model.FileLabeledCell;
+import com.defaulty.explorer.model.FilteredTreeItem;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TreeItem;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.util.Callback;
 
 import java.io.File;
+import java.util.HashMap;
 
 public class FileTable extends BorderPane implements ViewObserver {
 
-    private final ViewObserver viewObserver;
+    private final ViewConnector connector;
     private TableView<TreeItem<File>> table = new TableView<>();
 
-    public FileTable(ViewObserver observer) {
-        this.viewObserver = observer;
+    private TreeItem<File> currentRoot;
+
+    private HashMap<File, Labeled> cellHashMap = new HashMap<>();
+
+    private FilePopupMenu popup = new FilePopupMenu();
+
+    public FileTable(ViewConnector connector) {
+        this.connector = connector;
+        this.connector.register(this);
+        init();
     }
 
-    public void init() {
-        TableColumn<TreeItem<File>, TreeItem<File>> nameCol = getColumn("Имя", "itemName", 200);
+    private void init() {
+        TableColumn<TreeItem<File>, File> nameCol = getColumn("Имя", "itemFile", 200);
         TableColumn<TreeItem<File>, String> sizeCol = getColumn("Размер", "itemSize", 100);
         TableColumn<TreeItem<File>, String> typeCol = getColumn("Тип", "itemType", 150);
         TableColumn<TreeItem<File>, String> changeDateCol = getColumn("Дата", "itemData", 200);
 
-        nameCol.setComparator((TreeItem<File> ti1, TreeItem<File> ti2) -> {
-            if (ti1.getValue().isDirectory() == ti2.getValue().isDirectory()) {
-                if (ti1.getValue() == null || ti2.getValue() == null) return 0;
-                return ti1.getValue().getName().compareToIgnoreCase(ti2.getValue().getName());
+        nameCol.setComparator((ti1, ti2) -> {
+            if (ti1.isDirectory() == ti2.isDirectory()) {
+                return ti1.getName().compareToIgnoreCase(ti2.getName());
             } else
-                return ti1.getValue().isDirectory() ? -1 : 1;
+                return ti1.isDirectory() ? -1 : 1;
         });
 
-        nameCol.setCellFactory(column -> new TableCell<TreeItem<File>, TreeItem<File>>() {
-            @Override
-            protected void updateItem(TreeItem<File> item, boolean empty) {
-                super.updateItem(item, empty);
-
-                if (item == null || empty || item.getValue() == null) {
-                    setText(null);
-                    setGraphic(null);
-                    setStyle("");
-                } else {
-                    File f = item.getValue();
-                    setText(f.getParentFile() == null ? File.separator : f.getName());
-                    setGraphic(IconSetter.getImageView(item));
-                }
-            }
-        });
+        nameCol.setCellFactory(col -> getNewCell());
 
         table.getColumns().add(nameCol);
         table.getColumns().add(sizeCol);
@@ -61,21 +57,30 @@ public class FileTable extends BorderPane implements ViewObserver {
         table.getColumns().add(changeDateCol);
         table.getSortOrder().add(nameCol);
         table.setOnMouseClicked(mouseEvent -> {
-            if (mouseEvent.getClickCount() == 2) {
-                TreeItem<File> item = table.getSelectionModel().getSelectedItem();
-                if (item != null && item instanceof FolderTreeItem) {
-                    if (((FolderTreeItem) item).isDirectory()) {
-                        FolderTreeItem ftItem = (FolderTreeItem) item;
-                        ftItem.createExpandTreeFork();
-                        viewObserver.changeNode(item);
-                    }
+            if (mouseEvent.getClickCount() == 2 && mouseEvent.getButton() == MouseButton.PRIMARY) {
+                if(table.getSelectionModel().getSelectedItem() != null) {
+                    if (table.getSelectionModel().getSelectedItem().getValue().isDirectory())
+                        connector.loadFork(table.getSelectionModel().getSelectedItem(), true);
                 }
+            }
+            if (mouseEvent.getClickCount() == 1) {
+                if (mouseEvent.getButton() == MouseButton.SECONDARY) {
+                    TreeItem<File> item = table.getSelectionModel().getSelectedItem();
+                    if (item != null) {
+                        popup.show(item.getValue(), table, mouseEvent);
+                    }
+                } else
+                    popup.hide();
             }
         });
 
         disableColumnUnsortedOnClick(table);
 
         super.setCenter(table);
+    }
+
+    private TableCell<TreeItem<File>, File> getNewCell() {
+        return new FileLabeledCell(table, cellHashMap).getTableCell();
     }
 
     private <T> void disableColumnUnsortedOnClick(TableView<T> tableView) {
@@ -90,19 +95,31 @@ public class FileTable extends BorderPane implements ViewObserver {
         });
     }
 
-    @Override
-    public void changeNode(TreeItem<File> item) {
-        if (item != null) {
-            table.getItems().clear();
-            for (TreeItem<File> fItem : item.getChildren()) {
-                table.getItems().add(fItem);
+    public void changeState(TreeItem<File> fork) {
+        if (fork != null && fork.getValue() != null) {
+            if (currentRoot != null && currentRoot.getChildren().contains(fork)) {
+                Labeled labeled = cellHashMap.get(fork.getValue());
+                if (labeled != null)
+                    labeled.setGraphic(new ImageSetter().getImageView(fork, ImageSizePack.ImageSize.SMALL));
             }
-            if (item instanceof FolderTreeItem) {
-                FolderTreeItem ftItem = (FolderTreeItem) item;
-                for (TreeItem<File> fItem : ftItem.getFileChildrenList()) {
+        }
+    }
+
+    @Override
+    public void changeFork(TreeItem<File> fork) {
+        if (fork != null) {
+            currentRoot = fork;
+            table.getItems().clear();
+            if (fork instanceof FilteredTreeItem) {
+                FilteredTreeItem ftItem = (FilteredTreeItem) fork;
+                for (TreeItem<File> fItem : ftItem.getFileChildren()) {
                     table.getItems().add(fItem);
                 }
             }
+            for (TreeItem<File> fItem : fork.getChildren()) {
+                table.getItems().add(fItem);
+            }
+
             table.sort();
         }
     }
@@ -117,6 +134,14 @@ public class FileTable extends BorderPane implements ViewObserver {
                 table.getStylesheets().setAll("css/table-light.css");
                 break;
         }
+    }
+
+    @Override
+    public void setRightView(ViewType t) {
+    }
+
+    @Override
+    public void createFolder() {
     }
 
     private <T1, T2> TableColumn<T1, T2> getColumn(String name, String param, int size) {
@@ -137,7 +162,4 @@ public class FileTable extends BorderPane implements ViewObserver {
         });
     }
 
-    @Override
-    public void createFolder() {
-    }
 }

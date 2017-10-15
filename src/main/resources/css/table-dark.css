@@ -12,7 +12,7 @@
 }
 
 .table-view .column-header-background .label{
-    -fx-background-color: #262626;
+    /*-fx-background-color: #262626;*/
     /*-fx-background-color: transparent;*/
     -fx-text-fill: #0ed9e0;
 }

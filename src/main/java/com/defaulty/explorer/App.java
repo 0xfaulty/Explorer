@@ -1,7 +1,9 @@
 package com.defaulty.explorer;
 
 import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.control.ViewObserverImpl;
+import com.defaulty.explorer.model.TreeModelImpl;
+import com.defaulty.explorer.control.observer.ViewConnectorImpl;
+import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.panels.*;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -11,6 +13,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.io.File;
+
 /**
  * Main class
  */
@@ -19,40 +23,27 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            ViewObserverImpl fileViewableImpl = new ViewObserverImpl();
+            ViewConnector connector = new ViewConnectorImpl();
 
             VBox menus = new VBox();
-            TopToolBar topToolBar = new TopToolBar(fileViewableImpl);
-            menus.getChildren().addAll(new TopMenuBar(fileViewableImpl), topToolBar);
-
-            Image image = new Image(App.class.getClassLoader().getResourceAsStream("icons/closef.png"));
-            primaryStage.getIcons().add(image);
+            menus.getChildren().addAll(new TopMenuBar(connector), new TopToolBar(connector));
 
             SplitPane splitView = new SplitPane();
-            FolderTree folderTree = new FolderTree(fileViewableImpl);
-            FileTable fileTable = new FileTable(fileViewableImpl);
-
-            fileViewableImpl.register(folderTree);
-            fileViewableImpl.register(fileTable);
-            fileViewableImpl.register(topToolBar);
-
-            fileViewableImpl.setTheme(ThemeType.LIGHT);
-
-            fileTable.init();
-            folderTree.init();
-            topToolBar.init();
-
-            splitView.getItems().addAll(folderTree, fileTable);
+            splitView.getItems().addAll(new FolderTree(connector), new RightView(connector));
+            //splitView.getItems().addAll(new FolderTree(connector), new FileGrid(connector));
             splitView.setDividerPositions(0.25);
 
-            BorderPane root = new BorderPane();
-            root.setTop(menus);
-            root.setCenter(splitView);
-            root.setBottom(new BottomBar());
+            BorderPane rootPane = new BorderPane();
+            rootPane.setTop(menus);
+            rootPane.setCenter(splitView);
+            rootPane.setBottom(new BottomBar(connector));
 
-            Scene scene = new Scene(root, 900, 600);
+            connector.changeTheme(ThemeType.LIGHT);
+            connector.createModel(new TreeModelImpl(new File("/")));
 
-            primaryStage.setScene(scene);
+            primaryStage.getIcons().add(new Image(
+                    App.class.getClassLoader().getResourceAsStream("icons/big/folder_c.png")));
+            primaryStage.setScene(new Scene(rootPane, 900, 600));
             primaryStage.setTitle("Explorer");
             primaryStage.setMinWidth(400);
             primaryStage.setMinHeight(200);

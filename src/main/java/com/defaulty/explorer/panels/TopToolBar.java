@@ -1,12 +1,17 @@
 package com.defaulty.explorer.panels;
 
 import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.control.ViewObserver;
+import com.defaulty.explorer.control.ViewType;
+import com.defaulty.explorer.control.observer.ViewConnector;
+import com.defaulty.explorer.control.observer.ViewObserver;
 import impl.org.controlsfx.skin.BreadCrumbBarSkin;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.Control;
 import javafx.scene.control.TreeItem;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import org.controlsfx.control.BreadCrumbBar;
 
@@ -19,17 +24,19 @@ public class TopToolBar extends BorderPane implements ViewObserver {
     private List<TreeItem<File>> history = new ArrayList<>();
     private int historyIndex = -1;
 
+    private TreeItem<File> currentNode;
+
     private Button btnForward = new Button();
     private Button btnBack = new Button();
 
-    //private String curPath = System.getProperty("user.dir");
-
     private BreadCrumbBar<File> crumbBar = new BreadCrumbBar<>();
 
-    private final ViewObserver viewObserver;
+    private final ViewConnector connector;
 
-    public TopToolBar(ViewObserver observer) {
-        this.viewObserver = observer;
+    public TopToolBar(ViewConnector connector) {
+        this.connector = connector;
+        this.connector.register(this);
+        init();
     }
 
     public void init() {
@@ -42,7 +49,7 @@ public class TopToolBar extends BorderPane implements ViewObserver {
         btnForward.setOnAction(event -> historyForward());
 
         crumbBar.setOnCrumbAction(bae -> {
-            viewObserver.changeNode(bae.getSelectedCrumb());
+            connector.loadFork(bae.getSelectedCrumb(), true);
             if (!crumbBar.getSelectedCrumb().equals(history.get(historyIndex))) historyBack();
         });
 
@@ -54,20 +61,35 @@ public class TopToolBar extends BorderPane implements ViewObserver {
             } else return new BreadCrumbBarSkin.BreadCrumbButton("");
         });
 
-        ToolBar toolBarLeft = new ToolBar();
-        toolBarLeft.getItems().add(btnBack);
-        toolBarLeft.getItems().add(btnForward);
+        BorderPane buttonsPane = new BorderPane();
+        buttonsPane.setLeft(btnBack);
+        buttonsPane.setRight(btnForward);
+        BorderPane.setMargin(btnBack, new Insets(0, 5, 0, 0));
 
-        ToolBar toolBarCenter = new ToolBar();
-        toolBarCenter.getItems().add(crumbBar);
+        BorderPane crumbBarPane = new BorderPane();
+        crumbBarPane.setCenter(crumbBar);
 
-        TextField searchField = new TextField("поиск..");
-        ToolBar toolBarRight = new ToolBar();
-        toolBarRight.getItems().add(searchField);
+        SearchBox searchBox = new SearchBox();
 
-        setLeft(toolBarLeft);
-        setCenter(toolBarCenter);
-        setRight(toolBarRight);
+        final BorderPane searchPane = new BorderPane();
+        searchPane.getStylesheets().setAll("css/SearchBox.css");
+        searchPane.setPrefWidth(200);
+        searchPane.setMaxWidth(Control.USE_PREF_SIZE);
+        searchPane.setCenter(searchBox);
+
+        searchBox.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+            if (event.getCode() == KeyCode.ENTER && currentNode != null)
+                connector.treeSearch(currentNode, searchBox.getText());
+        });
+
+        setLeft(buttonsPane);
+        setCenter(crumbBarPane);
+        setRight(searchPane);
+
+        BorderPane.setMargin(buttonsPane, new Insets(5));
+        BorderPane.setMargin(crumbBarPane, new Insets(5));
+        BorderPane.setMargin(searchPane, new Insets(5));
+
     }
 
     private void historyBack() {
@@ -75,7 +97,7 @@ public class TopToolBar extends BorderPane implements ViewObserver {
             historyIndex--;
             TreeItem<File> item = history.get(historyIndex);
             crumbBar.setSelectedCrumb(item);
-            viewObserver.changeNode(item);
+            connector.loadFork(item, true);
             btnForward.setDisable(false);
             if (historyIndex == 0) btnBack.setDisable(true);
         }
@@ -86,44 +108,55 @@ public class TopToolBar extends BorderPane implements ViewObserver {
             historyIndex++;
             TreeItem<File> item = history.get(historyIndex);
             crumbBar.setSelectedCrumb(item);
-            viewObserver.changeNode(item);
+            connector.loadFork(item, true);
             btnBack.setDisable(false);
             if (historyIndex + 1 == history.size()) btnForward.setDisable(true);
         }
     }
 
     @Override
-    public void changeNode(TreeItem<File> item) {
-        if (historyIndex >= 0) {
-            TreeItem<File> curItem = history.get(historyIndex);
-            if (curItem != null && curItem.getValue() != null) {
-                if (!curItem.getValue().getPath().equals(item.getValue().getPath()))
-                    addHistory(item);
+    public void changeFork(TreeItem<File> fork) {
+        if (fork != null && fork.getValue() != null) {
+            currentNode = fork;
+            if (historyIndex >= 0) {
+                TreeItem<File> curItem = history.get(historyIndex);
+                if (curItem != null && fork.getValue() != null && curItem.getValue() != null) {
+                    if (!curItem.getValue().getPath().equals(fork.getValue().getPath()))
+                        addHistory(fork);
+                } else
+                    addHistory(fork);
             } else
-                addHistory(item);
-        } else
-            addHistory(item);
+                addHistory(fork);
+        }
+    }
+
+    @Override
+    public void changeState(TreeItem<File> fork) {
     }
 
     private void addHistory(TreeItem<File> item) {
-        crumbBar.setSelectedCrumb(item);
-        history.add(historyIndex + 1, item);
-        historyIndex++;
-        for (int i = history.size() - 1; i > historyIndex; i--) {
-            history.remove(i);
-        }
-        btnBack.setDisable(false);
-        btnForward.setDisable(true);
+        Platform.runLater(() -> {
+            crumbBar.setSelectedCrumb(item);
+            history.add(historyIndex + 1, item);
+            historyIndex++;
+            for (int i = history.size() - 1; i > historyIndex; i--) {
+                history.remove(i);
+            }
+            btnBack.setDisable(false);
+            btnForward.setDisable(true);
+        });
     }
 
     @Override
     public void setTheme(ThemeType t) {
+    }
 
+    @Override
+    public void setRightView(ViewType t) {
     }
 
     @Override
     public void createFolder() {
-
     }
 
 }

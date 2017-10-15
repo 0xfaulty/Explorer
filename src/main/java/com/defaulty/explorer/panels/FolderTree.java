@@ -1,91 +1,49 @@
 package com.defaulty.explorer.panels;
 
-import com.defaulty.explorer.control.IconSetter;
 import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.control.ViewObserver;
-import javafx.beans.property.ReadOnlyObjectWrapper;
+import com.defaulty.explorer.control.ViewType;
+import com.defaulty.explorer.control.observer.ViewConnector;
+import com.defaulty.explorer.control.observer.ViewObserver;
+import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
+import com.defaulty.explorer.control.rescontrol.image.ImageSizePack;
+import com.defaulty.explorer.model.FileLabeledCell;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.util.Callback;
 
 import java.io.File;
+import java.util.HashMap;
 
 public class FolderTree extends BorderPane implements ViewObserver {
 
-    private final ViewObserver viewObserver;
-    private final TreeTableView<File> treeTableView = new TreeTableView<>();
+    private final ViewConnector connector;
+    private final TreeView<File> tree = new TreeView<>();
 
-    public FolderTree(ViewObserver observer) {
-        this.viewObserver = observer;
+    private HashMap<File, Labeled> cellHashMap = new HashMap<>();
+
+    public FolderTree(ViewConnector connector) {
+        this.connector = connector;
+        this.connector.register(this);
+        setCenter(tree);
+        setMinWidth(200);
+        SplitPane.setResizableWithParent(this, false);
+        init();
     }
 
-    public void init() {
-        TreeItem<File> root = new FolderTreeItemImpl(new File("/"));
-        root.setExpanded(true);
-
-        treeTableView.getStylesheets().addAll("css/hidden-headers.css");
-        treeTableView.setShowRoot(true);
-        treeTableView.setRoot(root);
-        treeTableView.setColumnResizePolicy(TreeTableView.CONSTRAINED_RESIZE_POLICY);
-        treeTableView.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
-            if (isArrowKeys(event)) {
-                TreeItem<File> item = treeTableView.getSelectionModel().getSelectedItem();
-                if (item != null && item instanceof FolderTreeItem) {
-                    FolderTreeItem ftItem = (FolderTreeItem) item;
-                    ftItem.createExpandTreeFork();
-                    viewObserver.changeNode(item);
-                }
-            }
+    private void init() {
+        tree.getStylesheets().add("css/hide-scroll.css");
+        tree.setShowRoot(true);
+        tree.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+            if (isArrowKeys(event))
+                connector.loadFork(tree.getSelectionModel().getSelectedItem(), true);
         });
-        treeTableView.setOnMouseClicked(mouseEvent -> {
-            if (mouseEvent.getClickCount() == 1) {
-                TreeItem<File> item = treeTableView.getSelectionModel().getSelectedItem();
-                if (item != null && item instanceof FolderTreeItem) {
-                    FolderTreeItem ftItem = (FolderTreeItem) item;
-                    ftItem.createExpandTreeFork();
-                    viewObserver.changeNode(item);
-                }
-            }
+        tree.setOnMouseClicked(mouseEvent -> {
+            if (mouseEvent.getClickCount() == 1)
+                connector.loadFork(tree.getSelectionModel().getSelectedItem(), true);
         });
-
-        TreeTableColumn<File, TreeItem<File>> nameColumn = new TreeTableColumn<>("Name");
-        nameColumn.setCellValueFactory(cellData ->
-                new ReadOnlyObjectWrapper<>(cellData.getValue()));
-
-        nameColumn.setCellFactory(new Callback<TreeTableColumn<File, TreeItem<File>>, TreeTableCell<File, TreeItem<File>>>() {
-            @Override
-            public TreeTableCell<File, TreeItem<File>> call(TreeTableColumn<File, TreeItem<File>> column) {
-                return new TreeTableCell<File, TreeItem<File>>() {
-                    @Override
-                    protected void updateItem(TreeItem<File> item, boolean empty) {
-                        super.updateItem(item, empty);
-
-                        if (item == null || empty || item.getValue() == null) {
-                            setText(null);
-                            setGraphic(null);
-                            setStyle("");
-                        } else {
-                            File f = item.getValue();
-                            setText(f.getParentFile() == null ? f.getAbsolutePath() : f.getName());
-                            setGraphic(IconSetter.getImageView(item));
-                        }
-                    }
-                };
-            }
-        });
-        nameColumn.setPrefWidth(300);
-        nameColumn.setSortable(false);
-
-        treeTableView.getColumns().add(nameColumn);
-
-        viewObserver.changeNode(root);
-
-        SplitPane.setResizableWithParent(this, false);
-
-        this.setCenter(treeTableView);
-        this.setMinWidth(200);
+        tree.setCellFactory(param -> new FileLabeledCell(tree, cellHashMap).getTreeCell());
+        tree.setPrefWidth(300);
     }
 
     private boolean isArrowKeys(KeyEvent event) {
@@ -94,9 +52,19 @@ public class FolderTree extends BorderPane implements ViewObserver {
     }
 
     @Override
-    public void changeNode(TreeItem<File> item) {
-        //treeTableView.getSelectionModel().select(item.getFileTreeItem());
-        //treeTableView.getFocusModel().focus(0);
+    public void changeState(TreeItem<File> fork) {
+        if (fork != null && fork.getValue() != null) {
+            Labeled labeled = cellHashMap.get(fork.getValue());
+            if (labeled != null)
+                labeled.setGraphic(new ImageSetter().getImageView(fork, ImageSizePack.ImageSize.SMALL));
+        }
+    }
+
+    @Override
+    public void changeFork(TreeItem<File> fork) {
+        if (tree.getRoot() == null) tree.setRoot(fork);
+        //tree.getSelectionModel().select(item.getFileTreeItem());
+        //tree.getFocusModel().focus(0);
         //System.out.println(treeNode.toString());
     }
 
@@ -104,12 +72,17 @@ public class FolderTree extends BorderPane implements ViewObserver {
     public void setTheme(ThemeType t) {
         switch (t) {
             case DARK:
-                //treeTableView.getStylesheets().setAll("css/table-dark.css");
+                //tree.getStylesheets().setAll("css/table-dark.css");
                 break;
             case LIGHT:
-                //treeTableView.getStylesheets().setAll("css/table-light.css");
+                //tree.getStylesheets().setAll("css/table-light.css");
                 break;
         }
+    }
+
+    @Override
+    public void setRightView(ViewType t) {
+
     }
 
     @Override
