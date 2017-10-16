@@ -1,17 +1,10 @@
 package com.defaulty.explorer.panels;
 
-import com.defaulty.explorer.control.ThemeType;
 import com.defaulty.explorer.control.ViewType;
+import com.defaulty.explorer.control.events.ViewEvent;
 import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.control.observer.ViewObserver;
-import javafx.scene.control.Button;
-import javafx.scene.control.TreeItem;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-
-import java.io.File;
 
 public class RightView extends StackPane implements ViewObserver {
 
@@ -32,21 +25,14 @@ public class RightView extends StackPane implements ViewObserver {
     }
 
     @Override
-    public void changeFork(TreeItem<File> fork) {
-
+    public void receiveEvent(ViewEvent event) {
+        switch (event.getEventType()) {
+            case SET_RIGHT_VIEW:
+                setRightView(event.getViewType());
+                break;
+        }
     }
 
-    @Override
-    public void changeState(TreeItem<File> fork) {
-
-    }
-
-    @Override
-    public void setTheme(ThemeType t) {
-
-    }
-
-    @Override
     public void setRightView(ViewType t) {
         if (cType != t) {
             cType = t;
@@ -63,8 +49,4 @@ public class RightView extends StackPane implements ViewObserver {
         }
     }
 
-    @Override
-    public void createFolder() {
-
-    }
 }

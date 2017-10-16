@@ -43,6 +43,7 @@ public class App extends Application {
 
             primaryStage.getIcons().add(new Image(
                     App.class.getClassLoader().getResourceAsStream("icons/big/folder_c.png")));
+
             primaryStage.setScene(new Scene(rootPane, 900, 600));
             primaryStage.setTitle("Explorer");
             primaryStage.setMinWidth(400);

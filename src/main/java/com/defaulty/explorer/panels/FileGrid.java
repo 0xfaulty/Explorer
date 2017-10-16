@@ -1,7 +1,6 @@
 package com.defaulty.explorer.panels;
 
-import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.control.ViewType;
+import com.defaulty.explorer.control.events.ViewEvent;
 import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.control.observer.ViewObserver;
 import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
@@ -15,6 +14,7 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 
@@ -36,7 +36,7 @@ public class FileGrid extends ScrollPane implements ViewObserver {
         tilePane.setHgap(10);
         tilePane.setVgap(10);
         tilePane.setPrefColumns(10);
-        //tilePane.setMaxWidth(Region.USE_PREF_SIZE);
+        tilePane.setMaxWidth(Region.USE_PREF_SIZE);
 
         HBox hbox = new HBox();
         hbox.setAlignment(Pos.CENTER_LEFT);
@@ -47,7 +47,18 @@ public class FileGrid extends ScrollPane implements ViewObserver {
     }
 
     @Override
-    public void changeFork(TreeItem<File> fork) {
+    public void receiveEvent(ViewEvent event) {
+        switch (event.getEventType()) {
+            case CHANGE_FORK:
+                changeFork(event.getFork());
+                break;
+            case CHANGE_STATE:
+                changeState(event.getFork());
+                break;
+        }
+    }
+
+    private void changeFork(TreeItem<File> fork) {
         tilePane.getChildren().clear();
         for (TreeItem<File> fItem : fork.getChildren()) {
             GridItem gridItem = new GridItem(fItem);
@@ -64,23 +75,10 @@ public class FileGrid extends ScrollPane implements ViewObserver {
         }
     }
 
-    @Override
-    public void changeState(TreeItem<File> fork) {
+    private void changeState(TreeItem<File> fork) {
         GridItem gridItem = itemHashMap.get(fork.getValue());
         if (gridItem != null)
             gridItem.updateIcon();
-    }
-
-    @Override
-    public void setTheme(ThemeType t) {
-    }
-
-    @Override
-    public void setRightView(ViewType t) {
-    }
-
-    @Override
-    public void createFolder() {
     }
 
     private class GridItem extends VBox {

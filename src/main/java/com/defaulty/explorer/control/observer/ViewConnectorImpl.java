@@ -2,6 +2,9 @@ package com.defaulty.explorer.control.observer;
 
 import com.defaulty.explorer.control.ThemeType;
 import com.defaulty.explorer.control.ViewType;
+import com.defaulty.explorer.control.events.EventType;
+import com.defaulty.explorer.control.events.ViewEvent;
+import com.defaulty.explorer.control.events.ViewEventImpl;
 import com.defaulty.explorer.model.TreeModel;
 import javafx.scene.control.TreeItem;
 
@@ -21,28 +24,36 @@ public class ViewConnectorImpl extends Observable implements ViewConnectorModel 
     }
 
     public void changeFork(TreeItem<File> fork) {
+        ViewEvent viewEvent = new ViewEventImpl(EventType.CHANGE_FORK);
+        viewEvent.setFork(fork);
         for (ViewObserver outlet : this.observers) {
-            outlet.changeFork(fork);
+            outlet.receiveEvent(viewEvent);
         }
     }
 
     @Override
     public void changeState(TreeItem<File> fork) {
+        ViewEvent viewEvent = new ViewEventImpl(EventType.CHANGE_STATE);
+        viewEvent.setFork(fork);
         for (ViewObserver outlet : this.observers) {
-            outlet.changeState(fork);
+            outlet.receiveEvent(viewEvent);
         }
     }
 
     public void changeTheme(ThemeType type) {
+        ViewEvent viewEvent = new ViewEventImpl(EventType.SET_THEME);
+        viewEvent.setThemeType(type);
         for (ViewObserver outlet : this.observers) {
-            outlet.setTheme(type);
+            outlet.receiveEvent(viewEvent);
         }
     }
 
     @Override
-    public void changeRightView(ViewType t) {
+    public void changeRightView(ViewType type) {
+        ViewEvent viewEvent = new ViewEventImpl(EventType.SET_RIGHT_VIEW);
+        viewEvent.setViewType(type);
         for (ViewObserver outlet : this.observers) {
-            outlet.setRightView(t);
+            outlet.receiveEvent(viewEvent);
         }
     }
 
@@ -52,8 +63,9 @@ public class ViewConnectorImpl extends Observable implements ViewConnectorModel 
     }
 
     public void createFolder() {
+        ViewEvent viewEvent = new ViewEventImpl(EventType.CREATE_FOLDER);
         for (ViewObserver outlet : this.observers) {
-            outlet.createFolder();
+            outlet.receiveEvent(viewEvent);
         }
     }
 

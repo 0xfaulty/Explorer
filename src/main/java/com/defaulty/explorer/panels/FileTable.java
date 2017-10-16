@@ -1,7 +1,7 @@
 package com.defaulty.explorer.panels;
 
 import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.control.ViewType;
+import com.defaulty.explorer.control.events.ViewEvent;
 import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.control.observer.ViewObserver;
 import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
@@ -58,7 +58,7 @@ public class FileTable extends BorderPane implements ViewObserver {
         table.getSortOrder().add(nameCol);
         table.setOnMouseClicked(mouseEvent -> {
             if (mouseEvent.getClickCount() == 2 && mouseEvent.getButton() == MouseButton.PRIMARY) {
-                if(table.getSelectionModel().getSelectedItem() != null) {
+                if (table.getSelectionModel().getSelectedItem() != null) {
                     if (table.getSelectionModel().getSelectedItem().getValue().isDirectory())
                         connector.loadFork(table.getSelectionModel().getSelectedItem(), true);
                 }
@@ -95,7 +95,25 @@ public class FileTable extends BorderPane implements ViewObserver {
         });
     }
 
-    public void changeState(TreeItem<File> fork) {
+    @Override
+    public void receiveEvent(ViewEvent event) {
+        switch (event.getEventType()) {
+            case CHANGE_FORK:
+                changeFork(event.getFork());
+                break;
+            case CHANGE_STATE:
+                changeState(event.getFork());
+                break;
+            case SET_THEME:
+                setTheme(event.getThemeType());
+                break;
+            case CREATE_FOLDER:
+                createFolder();
+                break;
+        }
+    }
+
+    private void changeState(TreeItem<File> fork) {
         if (fork != null && fork.getValue() != null) {
             if (currentRoot != null && currentRoot.getChildren().contains(fork)) {
                 Labeled labeled = cellHashMap.get(fork.getValue());
@@ -105,8 +123,7 @@ public class FileTable extends BorderPane implements ViewObserver {
         }
     }
 
-    @Override
-    public void changeFork(TreeItem<File> fork) {
+    private void changeFork(TreeItem<File> fork) {
         if (fork != null) {
             currentRoot = fork;
             table.getItems().clear();
@@ -124,8 +141,7 @@ public class FileTable extends BorderPane implements ViewObserver {
         }
     }
 
-    @Override
-    public void setTheme(ThemeType t) {
+    private void setTheme(ThemeType t) {
         switch (t) {
             case DARK:
                 table.getStylesheets().setAll("css/table-dark.css");
@@ -136,12 +152,8 @@ public class FileTable extends BorderPane implements ViewObserver {
         }
     }
 
-    @Override
-    public void setRightView(ViewType t) {
-    }
-
-    @Override
-    public void createFolder() {
+    private void createFolder() {
+        //TODO: this
     }
 
     private <T1, T2> TableColumn<T1, T2> getColumn(String name, String param, int size) {

@@ -3,7 +3,6 @@ package com.defaulty.explorer.panels;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.Control;
 import javafx.scene.control.TextField;
@@ -29,10 +28,8 @@ public class SearchBox extends Region {
         textBox = new TextField();
         textBox.setPromptText("поиск..");
         final ChangeListener<String> textListener =
-                (ObservableValue<? extends String> observable,
-                 String oldValue, String newValue) -> {
-                    clearButton.setVisible(textBox.getText().length() != 0);
-                };
+                (ObservableValue<? extends String> observable, String oldValue, String newValue) ->
+                        clearButton.setVisible(textBox.getText().length() != 0);
         textBox.textProperty().addListener(textListener);
         getChildren().addAll(textBox, clearButton);
     }
@@ -43,7 +40,7 @@ public class SearchBox extends Region {
         clearButton.resizeRelocate(getWidth() - 18, 6, 12, 13);
     }
 
-    public String getText(){
+    public String getText() {
         return textBox.getText();
     }
 

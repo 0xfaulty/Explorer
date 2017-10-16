@@ -1,13 +1,16 @@
 package com.defaulty.explorer.panels;
 
 import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.control.ViewType;
+import com.defaulty.explorer.control.events.ViewEvent;
 import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.control.observer.ViewObserver;
 import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
 import com.defaulty.explorer.control.rescontrol.image.ImageSizePack;
 import com.defaulty.explorer.model.FileLabeledCell;
-import javafx.scene.control.*;
+import javafx.scene.control.Labeled;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
@@ -52,7 +55,21 @@ public class FolderTree extends BorderPane implements ViewObserver {
     }
 
     @Override
-    public void changeState(TreeItem<File> fork) {
+    public void receiveEvent(ViewEvent event) {
+        switch (event.getEventType()) {
+            case CHANGE_FORK:
+                changeFork(event.getFork());
+                break;
+            case CHANGE_STATE:
+                changeState(event.getFork());
+                break;
+            case SET_THEME:
+                setTheme(event.getThemeType());
+                break;
+        }
+    }
+
+    private void changeState(TreeItem<File> fork) {
         if (fork != null && fork.getValue() != null) {
             Labeled labeled = cellHashMap.get(fork.getValue());
             if (labeled != null)
@@ -60,16 +77,11 @@ public class FolderTree extends BorderPane implements ViewObserver {
         }
     }
 
-    @Override
-    public void changeFork(TreeItem<File> fork) {
+    private void changeFork(TreeItem<File> fork) {
         if (tree.getRoot() == null) tree.setRoot(fork);
-        //tree.getSelectionModel().select(item.getFileTreeItem());
-        //tree.getFocusModel().focus(0);
-        //System.out.println(treeNode.toString());
     }
 
-    @Override
-    public void setTheme(ThemeType t) {
+    private void setTheme(ThemeType t) {
         switch (t) {
             case DARK:
                 //tree.getStylesheets().setAll("css/table-dark.css");
@@ -78,15 +90,6 @@ public class FolderTree extends BorderPane implements ViewObserver {
                 //tree.getStylesheets().setAll("css/table-light.css");
                 break;
         }
-    }
-
-    @Override
-    public void setRightView(ViewType t) {
-
-    }
-
-    @Override
-    public void createFolder() {
     }
 
 }

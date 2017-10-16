@@ -1,7 +1,7 @@
 package com.defaulty.explorer.panels;
 
+import com.defaulty.explorer.control.rescontrol.ExRunnable;
 import com.defaulty.explorer.control.rescontrol.FileCRUD;
-import com.defaulty.explorer.control.rescontrol.ExRunable;
 import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
@@ -33,7 +33,7 @@ public class FilePopupMenu extends ContextMenu {
                 separator2, deleteMenu, renameMenu, createFolderMenu);
     }
 
-    private MenuItem getMenuItem(String name, ExRunable run) {
+    private MenuItem getMenuItem(String name, ExRunnable run) {
         MenuItem menuItem = new Menu(name);
         menuItem.setOnAction(event -> {
             try {

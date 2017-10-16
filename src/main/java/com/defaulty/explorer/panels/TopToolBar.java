@@ -1,7 +1,6 @@
 package com.defaulty.explorer.panels;
 
-import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.control.ViewType;
+import com.defaulty.explorer.control.events.ViewEvent;
 import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.control.observer.ViewObserver;
 import impl.org.controlsfx.skin.BreadCrumbBarSkin;
@@ -39,7 +38,7 @@ public class TopToolBar extends BorderPane implements ViewObserver {
         init();
     }
 
-    public void init() {
+    private void init() {
         btnBack.setText("<");
         btnBack.setDisable(true);
         btnBack.setOnAction(event -> historyBack());
@@ -89,7 +88,6 @@ public class TopToolBar extends BorderPane implements ViewObserver {
         BorderPane.setMargin(buttonsPane, new Insets(5));
         BorderPane.setMargin(crumbBarPane, new Insets(5));
         BorderPane.setMargin(searchPane, new Insets(5));
-
     }
 
     private void historyBack() {
@@ -115,7 +113,15 @@ public class TopToolBar extends BorderPane implements ViewObserver {
     }
 
     @Override
-    public void changeFork(TreeItem<File> fork) {
+    public void receiveEvent(ViewEvent event) {
+        switch (event.getEventType()) {
+            case CHANGE_FORK:
+                changeFork(event.getFork());
+                break;
+        }
+    }
+
+    private void changeFork(TreeItem<File> fork) {
         if (fork != null && fork.getValue() != null) {
             currentNode = fork;
             if (historyIndex >= 0) {
@@ -130,10 +136,6 @@ public class TopToolBar extends BorderPane implements ViewObserver {
         }
     }
 
-    @Override
-    public void changeState(TreeItem<File> fork) {
-    }
-
     private void addHistory(TreeItem<File> item) {
         Platform.runLater(() -> {
             crumbBar.setSelectedCrumb(item);
@@ -145,18 +147,6 @@ public class TopToolBar extends BorderPane implements ViewObserver {
             btnBack.setDisable(false);
             btnForward.setDisable(true);
         });
-    }
-
-    @Override
-    public void setTheme(ThemeType t) {
-    }
-
-    @Override
-    public void setRightView(ViewType t) {
-    }
-
-    @Override
-    public void createFolder() {
     }
 
 }
