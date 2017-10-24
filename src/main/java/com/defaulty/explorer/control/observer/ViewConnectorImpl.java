@@ -1,71 +1,46 @@
 package com.defaulty.explorer.control.observer;
 
 import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.control.ViewType;
 import com.defaulty.explorer.control.events.EventType;
 import com.defaulty.explorer.control.events.ViewEvent;
 import com.defaulty.explorer.control.events.ViewEventImpl;
-import com.defaulty.explorer.model.TreeModel;
+import com.defaulty.explorer.model.search.SearchTask;
+import com.defaulty.explorer.model.tree.ModelCRUD;
+import com.defaulty.explorer.model.tree.TreeModel;
+import com.defaulty.explorer.panels.center.ViewType;
 import javafx.scene.control.TreeItem;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
 
-public class ViewConnectorImpl extends Observable implements ViewConnectorModel {
+/**
+ * Класс поддерживающий контракт {@code ViewConnectorModel}.
+ */
+public class ViewConnectorImpl implements ViewConnectorModel {
 
+    /**
+     * Список зарегестрированных наблюдателей.
+     */
     private List<ViewObserver> observers = new ArrayList<>();
 
+    /**
+     * Модель работы с деревом элементов.
+     */
     private TreeModel treeModel;
 
-    public void loadFork(TreeItem<File> fork, boolean checkout) {
-        treeModel.loadFork(fork, checkout);
+    public ViewConnectorImpl(TreeModel treeModel) {
+        this.treeModel = treeModel;
+        this.treeModel.setViewConnector(this);
     }
 
-    public void changeFork(TreeItem<File> fork) {
-        ViewEvent viewEvent = new ViewEventImpl(EventType.CHANGE_FORK);
-        viewEvent.setFork(fork);
+    /**
+     * Отправить событие всем наблюдателям.
+     * @param event - событие.
+     */
+    private void sendEvent(ViewEvent event) {
         for (ViewObserver outlet : this.observers) {
-            outlet.receiveEvent(viewEvent);
-        }
-    }
-
-    @Override
-    public void changeState(TreeItem<File> fork) {
-        ViewEvent viewEvent = new ViewEventImpl(EventType.CHANGE_STATE);
-        viewEvent.setFork(fork);
-        for (ViewObserver outlet : this.observers) {
-            outlet.receiveEvent(viewEvent);
-        }
-    }
-
-    public void changeTheme(ThemeType type) {
-        ViewEvent viewEvent = new ViewEventImpl(EventType.SET_THEME);
-        viewEvent.setThemeType(type);
-        for (ViewObserver outlet : this.observers) {
-            outlet.receiveEvent(viewEvent);
-        }
-    }
-
-    @Override
-    public void changeRightView(ViewType type) {
-        ViewEvent viewEvent = new ViewEventImpl(EventType.SET_RIGHT_VIEW);
-        viewEvent.setViewType(type);
-        for (ViewObserver outlet : this.observers) {
-            outlet.receiveEvent(viewEvent);
-        }
-    }
-
-    @Override
-    public void treeSearch(TreeItem<File> item, String s) {
-        treeModel.treeSearch(item, s);
-    }
-
-    public void createFolder() {
-        ViewEvent viewEvent = new ViewEventImpl(EventType.CREATE_FOLDER);
-        for (ViewObserver outlet : this.observers) {
-            outlet.receiveEvent(viewEvent);
+            outlet.receiveEvent(event);
         }
     }
 
@@ -75,9 +50,50 @@ public class ViewConnectorImpl extends Observable implements ViewConnectorModel 
     }
 
     @Override
-    public void createModel(TreeModel treeModel) {
-        this.treeModel = treeModel;
-        this.treeModel.setViewConnector(this);
+    public void changeFork(TreeItem<File> fork) {
+        ViewEvent event = new ViewEventImpl(EventType.CHANGE_FORK);
+        event.setFork(fork);
+        sendEvent(event);
+    }
+
+    @Override
+    public void addSearchNode(TreeItem<File> fork) {
+        ViewEvent event = new ViewEventImpl(EventType.ADD_NODE);
+        event.setFork(fork);
+        sendEvent(event);
+    }
+
+    @Override
+    public void changeState(TreeItem<File> fork) {
+        ViewEvent event = new ViewEventImpl(EventType.CHANGE_STATE);
+        event.setFork(fork);
+        sendEvent(event);
+    }
+
+    @Override
+    public void changeTheme(ThemeType type) {
+        ViewEvent event = new ViewEventImpl(EventType.SET_THEME);
+        event.setThemeType(type);
+        sendEvent(event);
+    }
+
+    @Override
+    public void sendSearchTask(SearchTask searchTask) {
+        ViewEvent event = new ViewEventImpl(EventType.SEARCH_TASK);
+        event.setSearchTask(searchTask);
+        sendEvent(event);
+    }
+
+    @Override
+    public void changeRightView(ViewType type) {
+        ViewEvent event = new ViewEventImpl(EventType.SET_RIGHT_VIEW);
+        event.setViewType(type);
+        sendEvent(event);
+    }
+
+    @Override
+    public ModelCRUD getModelCRUD() {
+        return treeModel;
     }
 
 }

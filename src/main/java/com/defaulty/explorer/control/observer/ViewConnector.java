@@ -1,39 +1,44 @@
 package com.defaulty.explorer.control.observer;
 
 import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.control.ViewType;
-import com.defaulty.explorer.model.TreeModel;
-import javafx.scene.control.TreeItem;
+import com.defaulty.explorer.model.tree.ModelCRUD;
+import com.defaulty.explorer.panels.center.ViewType;
 
-import java.io.File;
-
+/**
+ * Контракт описывающий объект управляющий всеми включенными в него
+ * классами наблюдателями, использующие контракт {@code ViewObserver}
+ * по средством которого описываемый класс отправляет наблюдателям события системы.
+ */
 public interface ViewConnector {
 
     /**
-     * Вызвов подгрузки к дереву указанной ветки.
+     * Добавить класс поддерживающий контракт {@code ViewObserver} в список наблюдателей.
      *
-     * @param fork - ветка необходимая для подгрузки.
+     * @param outlet - класс наблюдатель.
      */
-    void loadFork(TreeItem<File> fork, boolean checkout);
+    void register(ViewObserver outlet);
 
     /**
-     * Вызов изменения стилей.
+     * Вернуть класс предоставляющий контракт {@code ModelCRUD}
+     * в котором описываются методы взаимодействия и операции с
+     * элементами.
+     *
+     * @return - класс {@code ModelCRUD}.
+     */
+    ModelCRUD getModelCRUD();
+
+    /**
+     * Вызов изменения стилей (тем).
      *
      * @param t - новый стиль.
      */
     void changeTheme(ThemeType t);
 
-    void changeRightView(ViewType t);
-
-    void treeSearch(TreeItem<File> item, String s);
-
     /**
-     * Вызов для добавления папки (отображения нового элемента в таблице).
+     * Переключения вида представления наблюдателем файловой системы.
+     *
+     * @param t - вид представления {@code ViewType}.
      */
-    void createFolder();
-
-    void register(ViewObserver outlet);
-
-    void createModel(TreeModel treeModel);
+    void changeRightView(ViewType t);
 
 }

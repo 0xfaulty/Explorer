@@ -4,13 +4,17 @@
 
     <groupId>com.defaulty.explorer</groupId>
     <artifactId>Explorer</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.2</version>
     <packaging>jar</packaging>
 
-    <name>Explorer</name>
+    <name>{file.name}</name>
     <url>http://maven.apache.org</url>
 
     <properties>
+        <file.name>Explorer</file.name>
+        <product.title>Explorer</product.title>
+        <company.name>Faulty inc.</company.name>
+        <file.description>File manager</file.description>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -19,7 +23,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>3.8.1</version>
+            <version>4.12</version>
             <scope>test</scope>
         </dependency>
 
@@ -35,16 +39,12 @@
             <version>2.1</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.ehcache</groupId>
-            <artifactId>ehcache</artifactId>
-            <version>3.4.0</version>
-        </dependency>
-
     </dependencies>
 
     <build>
         <plugins>
+
+            <!--Compile plugin-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -54,6 +54,76 @@
                     <target>${java.version}</target>
                 </configuration>
             </plugin>
+
+            <!--Pack to jar with dependencies-->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>jar-with-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <addClasspath>true</addClasspath>
+                                    <mainClass>com.defaulty.explorer.App</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptors>
+                                <descriptor>src/main/assembly/jar-assembly.xml</descriptor>
+                            </descriptors>
+                            <finalName>${file.name}</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--Pack to exe-->
+            <plugin>
+                <groupId>com.akathist.maven.plugins.launch4j</groupId>
+                <artifactId>launch4j-maven-plugin</artifactId>
+                <version>1.7.21</version>
+                <executions>
+                    <execution>
+                        <id>l4j-clui</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>launch4j</goal>
+                        </goals>
+                        <configuration>
+                            <headerType>gui</headerType>
+                            <outfile>target/${file.name}.exe</outfile>
+                            <jar>target/${file.name}-full.jar</jar>
+                            <errTitle>${product.title}</errTitle>
+                            <icon>src/main/resources/favicon.ico</icon>
+                            <classPath>
+                                <mainClass>com.defaulty.explorer.App</mainClass>
+                                <addDependencies>true</addDependencies>
+                                <preCp>anything</preCp>
+                            </classPath>
+                            <jre>
+                                <minVersion>${java.version}.0</minVersion>
+                            </jre>
+                            <versionInfo>
+                                <fileVersion>${project.version}.0.0</fileVersion>
+                                <txtFileVersion>${project.version}</txtFileVersion>
+                                <fileDescription>${file.description}</fileDescription>
+                                <copyright>${company.name}</copyright>
+                                <productVersion>${project.version}.0.0</productVersion>
+                                <txtProductVersion>${project.version}</txtProductVersion>
+                                <companyName>${company.name}</companyName>
+                                <productName>${product.title}</productName>
+                                <internalName>${file.name}</internalName>
+                                <originalFilename>${file.name}.exe</originalFilename>
+                            </versionInfo>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 </project>

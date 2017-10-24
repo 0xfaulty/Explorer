@@ -1,0 +1,15 @@
+com.defaulty.explorer
+com.defaulty.explorer.control
+com.defaulty.explorer.control.events
+com.defaulty.explorer.control.observer
+com.defaulty.explorer.control.rescontrol
+com.defaulty.explorer.control.rescontrol.files
+com.defaulty.explorer.control.rescontrol.image
+com.defaulty.explorer.model
+com.defaulty.explorer.model.item
+com.defaulty.explorer.model.search
+com.defaulty.explorer.model.tree
+com.defaulty.explorer.panels
+com.defaulty.explorer.panels.bottom
+com.defaulty.explorer.panels.center
+com.defaulty.explorer.panels.top

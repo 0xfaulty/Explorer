@@ -1,6 +1,6 @@
 package com.defaulty.explorer.control.rescontrol.image;
 
-import com.defaulty.explorer.model.FilteredTreeItem;
+import com.defaulty.explorer.model.item.FilteredTreeItem;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.Image;
@@ -15,45 +15,56 @@ import java.util.Map;
 
 public class ImageSetter {
 
+    /**
+     * Класс для взаимодействия с файловой системой.
+     */
     private static FileSystemView fsv = FileSystemView.getFileSystemView();
+
+    /**
+     * Кеш соответствия файла и его иконки.
+     */
     private static Map<File, ImageSizePack> iconCache = new HashMap<>();
 
+    /**
+     * Класс получения не стандартных иконок для файлов или папок.
+     */
     private static CustomIcons customIcons = new CustomIcons();
 
-    public void setImageView(File file, CustomIcons.FolderIcons type, ImageSizePack.ImageSize size) {
-        setImageViewType(file, type);
-    }
-
-    public void setImageView(TreeItem<File> item, CustomIcons.FolderIcons type, ImageSizePack.ImageSize size) {
+    /**
+     * Метод для установки в соответствии с переданным типом
+     * иконки заданной папке из элемента. Если элемент не содержит
+     * значения, будет выброшено NullPointerException.
+     *
+     * @param item - элемент содержащий папку.
+     * @param type - тип иконки.
+     */
+    public void setFolderImageView(TreeItem<File> item, FolderIcons type) {
         if (item != null) {
-            setImageViewType(item.getValue(), type);
+            putCacheImageIcon(item.getValue(), customIcons.getCustomFolderIcon(type));
         } else
             throw new NullPointerException();
     }
 
-    private void setImageViewType(File file, CustomIcons.FolderIcons type) {
-        putCacheImageIcon(file, customIcons.getCustomFolderIcon(type));
-    }
-
+    /**
+     * Добавления в кэш соответствия файла и контейнера иконок.
+     *
+     * @param file - файл.
+     * @param pack - контейнер иконок.
+     */
     private void putCacheImageIcon(File file, ImageSizePack pack) {
         if (file != null) iconCache.put(file, pack);
     }
 
-    private Image getSize(ImageSizePack pack, ImageSizePack.ImageSize size) {
-        switch (size) {
-            case SMALL:
-                return pack.getSmall();
-            case MEDIUM:
-                return pack.getMedium();
-            case BIG:
-                return pack.getBig();
-        }
-        return null;
-    }
-
+    /**
+     * Метод получения контейнера иконок для файла, вызываемый при
+     * отсутствии такового в кэше.
+     *
+     * @param file - файл или папка.
+     * @return - контейнер иконок.
+     */
     private ImageSizePack getCustomImageView(File file) {
         if (file.isDirectory()) {
-            return customIcons.getCustomFolderIcon(CustomIcons.FolderIcons.UNLOAD_FOLDER);
+            return customIcons.getCustomFolderIcon(FolderIcons.UNLOAD_FOLDER);
         } else {
             ImageSizePack pack = customIcons.getCustomFileIcon(file);
             if (pack == null) pack = getFileIcon(file);
@@ -61,6 +72,13 @@ public class ImageSetter {
         }
     }
 
+    /**
+     * Получение иконки заданного размера для файла или папки.
+     *
+     * @param file - входной файл или папка.
+     * @param size - размер.
+     * @return - иконка.
+     */
     public ImageView getImageView(File file, ImageSizePack.ImageSize size) {
         ImageSizePack pack = iconCache.get(file);
         if (pack == null) {
@@ -70,19 +88,27 @@ public class ImageSetter {
         return new ImageView(pack.getImage(size));
     }
 
+    /**
+     * Получение иконки заданного размера для файла или папки
+     * содержащегося в элементе дерева.
+     *
+     * @param item - входной элемент.
+     * @param size - размер.
+     * @return - иконка.
+     */
     public ImageView getImageView(TreeItem<File> item, ImageSizePack.ImageSize size) {
         if (item != null) {
             ImageSizePack pack = iconCache.get(item.getValue());
             if (pack == null) {
                 if (item instanceof FilteredTreeItem) {
                     FilteredTreeItem fti = (FilteredTreeItem) item;
-                    if (!fti.getIconType().moreThen(FilteredTreeItem.IconType.LOADABLE)) {
-                        pack = customIcons.getCustomFolderIcon(CustomIcons.FolderIcons.LOADABLE_FOLDER);
+                    if (!fti.getIconType().moreThan(FolderIcons.LOADABLE_FOLDER)) {
+                        pack = customIcons.getCustomFolderIcon(FolderIcons.LOADABLE_FOLDER);
                     }
                 }
                 if (pack == null) {
                     if (item.isExpanded())
-                        pack = customIcons.getCustomFolderIcon(CustomIcons.FolderIcons.OPEN_FOLDER);
+                        pack = customIcons.getCustomFolderIcon(FolderIcons.OPEN_FOLDER);
                     else
                         pack = getCustomImageView(item.getValue());
                 }
@@ -92,6 +118,13 @@ public class ImageSetter {
             throw new NullPointerException();
     }
 
+    /**
+     * Получение контейнера иконок файла с помощью класса взаимодействия с
+     * файловой системой.
+     *
+     * @param file - входной файл.
+     * @return - контейнер иконок.
+     */
     private ImageSizePack getFileIcon(File file) {
         javax.swing.Icon icon = fsv.getSystemIcon(file);
 
@@ -103,9 +136,15 @@ public class ImageSetter {
         return pack;
     }
 
+    /**
+     * Преобразование типа и размера изображения.
+     *
+     * @param icon   - изображение типа  {@code javax.swing.Icon}.
+     * @param width  - ширина изображения.
+     * @param height - высота  изображения.
+     * @return - изображение типа  {@code javafx.scene.image.Image}.
+     */
     private Image getFileIconImage(javax.swing.Icon icon, int width, int height) {
-
-
         BufferedImage bufferedImage = new BufferedImage(
                 icon.getIconWidth(),
                 icon.getIconHeight(),
@@ -118,11 +157,17 @@ public class ImageSetter {
         return SwingFXUtils.toFXImage(imageToBufferedImage(image), null);
     }
 
-    private BufferedImage imageToBufferedImage(java.awt.Image im) {
+    /**
+     * Преобразование типов изображения.
+     *
+     * @param image - изображение типа  {@code java.awt.Image}.
+     * @return - изображение типа в {@code BufferedImage}.
+     */
+    private BufferedImage imageToBufferedImage(java.awt.Image image) {
         BufferedImage bi = new BufferedImage
-                (im.getWidth(null), im.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+                (image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
         Graphics bg = bi.getGraphics();
-        bg.drawImage(im, 0, 0, null);
+        bg.drawImage(image, 0, 0, null);
         bg.dispose();
         return bi;
     }

@@ -6,7 +6,12 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 
+/**
+ * Класс для ассоциативного пристваивания иконок некоторым типам файлов.
+ * Также устанавливает иконки для разного состояния папки.
+ */
 public class CustomIcons {
+
     private ImageSizePack imageUnloadDir;
     private ImageSizePack imageOpenDir;
     private ImageSizePack imageCloseDir;
@@ -26,11 +31,14 @@ public class CustomIcons {
         imagePpt = getImageResourcePack("ppt.png");
     }
 
-    public enum FolderIcons {
-        UNLOAD_FOLDER, LOADABLE_FOLDER, CLOSE_FOLDER, OPEN_FOLDER
-    }
-
-    public ImageSizePack getCustomFolderIcon(FolderIcons type){
+    /**
+     * Метод для получения замённой иконки указанного состояния папки.
+     *
+     * @param type - состояние папки.
+     * @return - контейнер размеров ассоциативной иконки или null если
+     * такой ассоциации не указано в методе.
+     */
+    public ImageSizePack getCustomFolderIcon(FolderIcons type) {
         switch (type) {
             case UNLOAD_FOLDER:
                 return imageUnloadDir;
@@ -44,8 +52,16 @@ public class CustomIcons {
         return null;
     }
 
+    /**
+     * Метод получающий заменнёную иконку для расширения переданного файла
+     * если с типом данного файла есть такая ассоциация.
+     *
+     * @param file - входной файл.
+     * @return - контейнер размеров ассоциативной иконки или null если
+     * такой ассоциации не указано в методе.
+     */
     public ImageSizePack getCustomFileIcon(File file) {
-        String ext = FilenameUtils.getExtension(file.getPath());
+        String ext = FilenameUtils.getExtension(file.getPath()).toLowerCase();
         if (ext.equals("txt")) return imageTxt;
         if (ext.equals("log")) return imageTxt;
         if (ext.equals("doc")) return imageDoc;
@@ -54,6 +70,14 @@ public class CustomIcons {
         return null;
     }
 
+    /**
+     * Метод получения иконок из ресурсов приложения.
+     * Каждая иконка храниться в контейнере {@code ImageSizePack}
+     * в трех видах.
+     *
+     * @param name - имя иконки в ресурсах.
+     * @return - контейнер размеров иконки.
+     */
     private ImageSizePack getImageResourcePack(String name) {
         ImageSizePack pack = new ImageSizePack();
         pack.setBig(getImageResource("icons/big/" + name, 100, 100));
@@ -63,6 +87,14 @@ public class CustomIcons {
         return pack;
     }
 
+    /**
+     * Получение иконки из русурсов приложения по указанному пути.
+     *
+     * @param patch  - путь к иконке.
+     * @param width  - требуемуя ширина.
+     * @param height - требуемая высота.
+     * @return - изображение.
+     */
     private Image getImageResource(String patch, int width, int height) {
         Image img = null;
         try {
