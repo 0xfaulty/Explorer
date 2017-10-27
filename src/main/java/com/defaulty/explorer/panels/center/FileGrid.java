@@ -77,7 +77,7 @@ public class FileGrid extends ScrollPane implements ViewObserver {
      */
     private void addNode(TreeItem<File> fork) {
         if (fork != null) {
-            GridItem gridItem = new GridItem(fork);
+            GridItem gridItem = new GridItem(fork.getValue());
             tilePane.getChildren().add(gridItem);
         }
     }
@@ -101,18 +101,19 @@ public class FileGrid extends ScrollPane implements ViewObserver {
     private void changeFork(TreeItem<File> fork) {
         tilePane.getChildren().clear();
         for (TreeItem<File> fItem : fork.getChildren()) {
-            GridItem gridItem = new GridItem(fItem);
+            GridItem gridItem = new GridItem(fItem.getValue());
             itemHashMap.put(fItem.getValue(), gridItem);
             tilePane.getChildren().add(gridItem);
         }
         if (fork instanceof FilteredTreeItem) {
             FilteredTreeItem ftItem = (FilteredTreeItem) fork;
             for (TreeItem<File> fItem : ftItem.getFileChildren()) {
-                GridItem gridItem = new GridItem(fItem);
+                GridItem gridItem = new GridItem(fItem.getValue());
                 itemHashMap.put(fItem.getValue(), gridItem);
                 tilePane.getChildren().add(gridItem);
             }
         }
+        changeState(fork);
     }
 
     /**
@@ -120,28 +121,28 @@ public class FileGrid extends ScrollPane implements ViewObserver {
      */
     private class GridItem extends VBox {
 
-        private TreeItem<File> item;
+        private File file;
 
         private Label icon;
         private Label label;
 
-        GridItem(TreeItem<File> item) {
-            this.item = item;
+        GridItem(File file) {
+            this.file = file;
             icon = new Label();
             updateIcon();
-            String name = item.getValue().getName();
+            String name = file.getName();
             if (name.length() > 25) name = name.substring(0, 22) + "..";
             label = new Label(name);
             getChildren().addAll(icon, label);
 
             setOnMouseClicked(mouseEvent -> {
                 if (mouseEvent.getClickCount() == 2 && mouseEvent.getButton() == MouseButton.PRIMARY) {
-                    if (item.getValue().isDirectory()) modelCRUD.loadFork(item);
+                    if (file.isDirectory()) modelCRUD.loadFork(file);
                 }
                 if (mouseEvent.getClickCount() == 1) {
                     //setStyle("-fx-background-color: #9dc6e0");
                     if (mouseEvent.getButton() == MouseButton.SECONDARY) {
-                        popup.show(item, this, mouseEvent);
+                        popup.show(file, this, mouseEvent);
                     } else
                         popup.hide();
                 }
@@ -151,7 +152,7 @@ public class FileGrid extends ScrollPane implements ViewObserver {
         }
 
         void updateIcon() {
-            ImageView view = new ImageSetter().getImageView(item.getValue(), ImageSizePack.ImageSize.BIG);
+            ImageView view = new ImageSetter().getImageView(file, ImageSizePack.ImageSize.BIG);
             icon.setGraphic(view);
         }
 

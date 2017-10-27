@@ -6,6 +6,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Optional;
 
@@ -18,8 +19,12 @@ public class FileOperationsImpl implements FileOperations {
     private boolean cutFlag;
 
     @Override
-    public void open(File file) throws Exception {
-        Desktop.getDesktop().open(file);
+    public void open(File file) {
+        try {
+            Desktop.getDesktop().open(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -35,7 +40,7 @@ public class FileOperationsImpl implements FileOperations {
     }
 
     @Override
-    public void paste(File destParentFolder) throws Exception {
+    public void paste(File destParentFolder) {
         if (sourceFile != null && destParentFolder.isDirectory()) {
             File destFile = new File(destParentFolder.getAbsolutePath() + "\\" + sourceFile.getName());
             if (!sourceFile.getAbsoluteFile().equals(destFile.getAbsoluteFile())) {
@@ -58,10 +63,13 @@ public class FileOperationsImpl implements FileOperations {
      *
      * @param sourceFile - источник.
      * @param destFile   - место назначения.
-     * @throws Exception - ошибки при копировании.
      */
-    private void copyFile(File sourceFile, File destFile) throws Exception {
-        Files.copy(sourceFile.toPath(), destFile.toPath());
+    private void copyFile(File sourceFile, File destFile){
+        try {
+            Files.copy(sourceFile.toPath(), destFile.toPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private boolean warningAlert(String header, String question) {

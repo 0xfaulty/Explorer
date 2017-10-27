@@ -1,8 +1,6 @@
 package com.defaulty.explorer.model.search;
 
-import com.defaulty.explorer.model.item.FilteredTreeItemImpl;
 import javafx.application.Platform;
-import javafx.scene.control.TreeItem;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -10,7 +8,7 @@ import java.util.List;
 
 public class SearchTaskImpl implements Runnable, SearchTask {
 
-    private final TreeItem<File> root;
+    private final File root;
     private final String string;
     private TreeBackPoint backPoint;
 
@@ -19,22 +17,21 @@ public class SearchTaskImpl implements Runnable, SearchTask {
     private int counter = 0;
     private boolean stopFlag = false;
 
-    public SearchTaskImpl(TreeItem<File> root, String string, TreeBackPoint backPoint) {
+    public SearchTaskImpl(File root, String string, TreeBackPoint backPoint) {
         this.root = root;
         this.string = string;
         this.backPoint = backPoint;
     }
 
     public void run() {
-        recurseSearch(root.getValue(), string);
+        recurseSearch(root, string);
     }
 
     private void recurseSearch(File node, String s) {
         if (stopFlag) return;
         if (node != null) {
             if (node.getName().toLowerCase().indexOf(s.toLowerCase()) > 0) {
-                //TODO: заменить явное создание FilteredTreeItemImpl на абстрактное или другим способом
-                backPoint.accept(new FilteredTreeItemImpl(node, e -> !e.isHidden()));
+                backPoint.accept(node);
                 counter++;
                 Platform.runLater(() -> {
                             for (Runnable r : counterInputs)

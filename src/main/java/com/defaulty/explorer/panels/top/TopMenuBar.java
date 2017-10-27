@@ -15,7 +15,7 @@ import java.io.File;
 public class TopMenuBar extends MenuBar implements ViewObserver {
 
     private final ModelCRUD modelCRUD;
-    private TreeItem<File> currentRoot;
+    private File currentRoot;
 
     public TopMenuBar(ViewConnector connector) {
         connector.register(this);
@@ -46,7 +46,7 @@ public class TopMenuBar extends MenuBar implements ViewObserver {
     public void receiveEvent(ViewEvent event) {
         switch (event.getEventType()) {
             case CHANGE_FORK:
-                currentRoot = event.getFork();
+                currentRoot = event.getFork().getValue();
                 break;
         }
     }

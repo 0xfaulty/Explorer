@@ -35,14 +35,11 @@ public class ImageSetter {
      * иконки заданной папке из элемента. Если элемент не содержит
      * значения, будет выброшено NullPointerException.
      *
-     * @param item - элемент содержащий папку.
+     * @param file - папкf.
      * @param type - тип иконки.
      */
-    public void setFolderImageView(TreeItem<File> item, FolderIcons type) {
-        if (item != null) {
-            putCacheImageIcon(item.getValue(), customIcons.getCustomFolderIcon(type));
-        } else
-            throw new NullPointerException();
+    public synchronized void setFolderImageView(File file, FolderIcons type) {
+        putCacheImageIcon(file, customIcons.getCustomFolderIcon(type));
     }
 
     /**

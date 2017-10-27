@@ -4,13 +4,16 @@ import com.defaulty.explorer.control.observer.ViewConnectorModel;
 import com.defaulty.explorer.control.rescontrol.files.FileOperations;
 import com.defaulty.explorer.control.rescontrol.files.FileOperationsImpl;
 import com.defaulty.explorer.control.rescontrol.image.FolderIcons;
+import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
 import com.defaulty.explorer.model.item.FilteredTreeItem;
+import com.defaulty.explorer.model.item.ItemStorageImpl;
 import com.defaulty.explorer.model.search.SearchTask;
 import com.defaulty.explorer.model.search.SearchTaskImpl;
 import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
 
 import java.io.File;
+import java.io.FileFilter;
 
 /**
  * Класс поддерживающий контракт {@code TreeModel}.
@@ -20,7 +23,14 @@ public class TreeModelImpl implements TreeModel {
     private ViewConnectorModel viewConnector;
     private FileOperations fo = new FileOperationsImpl();
 
-    private boolean loadedRoot;
+    private ItemStorageImpl storage;
+    private ImageSetter imageSetter = new ImageSetter();
+
+    private boolean firstNode = true;
+
+    public TreeModelImpl(FileFilter fileFilter) {
+        storage = new ItemStorageImpl(fileFilter);
+    }
 
     @Override
     public void setViewConnector(ViewConnectorModel viewConnector) {
@@ -28,58 +38,37 @@ public class TreeModelImpl implements TreeModel {
     }
 
     @Override
-    public synchronized void loadFork(TreeItem<File> fork) {
-        if (fork != null && fork instanceof FilteredTreeItem) {
-            FilteredTreeItem ftItem = (FilteredTreeItem) fork;
-            if (ftItem.getIconType().lessThan(FolderIcons.LOADABLE_FOLDER)) {
-                ftItem.setIconType(FolderIcons.LOADABLE_FOLDER);
-                viewConnector.changeState(fork);
+    public synchronized void loadFork(File file) {
+        if (file != null) {
+            if (!storage.isHashed(file)) {
+                imageSetter.setFolderImageView(file, FolderIcons.LOADABLE_FOLDER);
+                viewConnector.changeState(storage.getTreeItem(file));
                 new Thread(() -> {
-                    ftItem.createChildren();
-                    finishBackPoint(fork);
+                    storage.createChildren(file);
+                    imageSetter.setFolderImageView(file, FolderIcons.CLOSE_FOLDER);
+                    Platform.runLater(() -> {
+                        viewConnector.changeState(storage.getTreeItem(file));
+                        if(firstNode) {
+                            firstNode = false;
+                            viewConnector.changeFork(storage.getTreeItem(file));
+                        }
+                    });
                 }).start();
-            }
-            if (ftItem.getIconType() != FolderIcons.LOADABLE_FOLDER) {
+            } else {
                 new Thread(() -> {
-                    ftItem.createChildren();
-                    finishBackPoint(fork);
+                    storage.createChildren(file);
+                    Platform.runLater(() -> viewConnector.changeFork(storage.getTreeItem(file)));
                 }).start();
             }
         }
     }
 
-    /**
-     * Точка возврата из задачи загрузки подэлементов некоторого узла.
-     * Загруженные в отдельном потоке элементы добавляются в главный для них сектр.
-     * Используется для избежания Concurrent Modification Exception.
-     *
-     * @param loadedFork - узел с загруженными подэлементами.
-     */
-    private synchronized void finishBackPoint(TreeItem<File> loadedFork) {
-        Platform.runLater(() -> {
-            if (loadedFork != null && loadedFork instanceof FilteredTreeItem) {
-                FilteredTreeItem ftItem = (FilteredTreeItem) loadedFork;
-                ftItem.setChildren(ftItem.getFolderChildren());
-                if (ftItem.getIconType().lessThan(FolderIcons.CLOSE_FOLDER)) {
-                    ftItem.setIconType(FolderIcons.CLOSE_FOLDER);
-                    viewConnector.changeState(loadedFork);
-                    if (!loadedRoot) {
-                        loadedRoot = true;
-                        viewConnector.changeFork(loadedFork);
-                    }
-                } else
-                    viewConnector.changeFork(loadedFork);
-            }
-        });
-    }
-
     @Override
-    public void treeSearch(TreeItem<File> currentFork, String s) {
+    public void treeSearch(File folder, String s) {
         if (s.equals(""))
-            viewConnector.changeFork(currentFork);
+            viewConnector.changeFork(storage.getTreeItem(folder));
         else {
-            System.out.println("Search: " + s);
-            SearchTask searchTask = new SearchTaskImpl(currentFork, s, this::searchBackPoint);
+            SearchTask searchTask = new SearchTaskImpl(folder, s, this::searchBackPoint);
             new Thread(searchTask).start();
             viewConnector.sendSearchTask(searchTask);
         }
@@ -88,56 +77,50 @@ public class TreeModelImpl implements TreeModel {
     /**
      * Точка возврата нового найденного элемента из задачи поиска .
      *
-     * @param item - новый найденный элемент.
+     * @param file - новый найденный элемент.
      */
-    private synchronized void searchBackPoint(TreeItem<File> item) {
-        Platform.runLater(() -> viewConnector.addSearchNode(item));
+    private synchronized void searchBackPoint(File file) {
+        Platform.runLater(() -> viewConnector.addSearchNode(storage.getTreeItem(file)));
     }
 
     @Override
-    public void createFolderIn(TreeItem<File> parentItem) {
-        if (parentItem != null) {
-            if (fo.createFolderIn(parentItem.getValue()))
-                loadFork(parentItem);
-        }
-    }
-
-    @Override
-    public void open(TreeItem<File> item) {
+    public void open(File file) {
         try {
-            fo.open(item.getValue());
+            fo.open(file);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void cut(TreeItem<File> item, TreeItem<File> itemParent) {
-        fo.cut(item.getValue());
-        removeTreeChild(item, itemParent);
-        loadFork(itemParent);
+    public void cut(File sourceFile) {
+        fo.cut(sourceFile);
+        TreeItem<File> fork = storage.getTreeItem(sourceFile);
+        removeTreeChild(fork, fork.getParent());
+        loadFork(fork.getParent().getValue()); //TODO:?
     }
 
     @Override
-    public void copy(TreeItem<File> item) {
-        fo.copy(item.getValue());
+    public void copy(File sourceFile) {
+        fo.copy(sourceFile);
     }
 
     @Override
-    public void paste(TreeItem<File> itemParent) {
+    public void paste(File destParentFolder) {
         try {
-            fo.paste(itemParent.getValue());
-            loadFork(itemParent);
+            fo.paste(destParentFolder);
+            loadFork(destParentFolder);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void delete(TreeItem<File> item, TreeItem<File> itemParent) {
-        fo.delete(item.getValue());
-        removeTreeChild(item, itemParent);
-        loadFork(itemParent);
+    public void delete(File file) {
+        fo.delete(file);
+        TreeItem<File> fork = storage.getTreeItem(file);
+        removeTreeChild(fork, fork.getParent());
+        loadFork(fork.getParent().getValue()); //TODO:?
     }
 
     /**
@@ -150,8 +133,25 @@ public class TreeModelImpl implements TreeModel {
         itemParent.getChildren().remove(item);
         if (itemParent instanceof FilteredTreeItem) {
             FilteredTreeItem ftItem = (FilteredTreeItem) itemParent;
-            ftItem.removeFileChildren(item);
+            ftItem.getFileChildren().remove(item);
         }
+    }
+
+    @Override
+    public boolean rename(File sourceFile, File destFile) {
+        return fo.rename(sourceFile, destFile);
+    }
+
+    @Override
+    public boolean createFolderIn(File parentFolder) {
+        if (parentFolder != null) {
+            TreeItem<File> fork = storage.getTreeItem(parentFolder);
+            if (fo.createFolderIn(fork.getValue())) {
+                loadFork(parentFolder);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -45,12 +45,16 @@ public class FolderTree extends BorderPane implements ViewObserver {
         tree.getStylesheets().add("css/hide-scroll.css");
         tree.setShowRoot(true);
         tree.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
-            if (isArrowKeys(event))
-                modelCRUD.loadFork(tree.getSelectionModel().getSelectedItem());
+            if (isArrowKeys(event)) {
+                TreeItem<File> item = tree.getSelectionModel().getSelectedItem();
+                if (item != null) modelCRUD.loadFork(item.getValue());
+            }
         });
         tree.setOnMouseClicked(mouseEvent -> {
-            if (mouseEvent.getClickCount() == 1)
-                modelCRUD.loadFork(tree.getSelectionModel().getSelectedItem());
+            if (mouseEvent.getClickCount() == 1){
+                TreeItem<File> item = tree.getSelectionModel().getSelectedItem();
+                if (item != null) modelCRUD.loadFork(item.getValue());
+            }
         });
         tree.setCellFactory(param -> new FileLabeledCell(tree, cellHashMap).getTreeCell());
         tree.setPrefWidth(300);

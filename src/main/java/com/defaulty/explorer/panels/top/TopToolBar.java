@@ -56,7 +56,7 @@ public class TopToolBar extends BorderPane implements ViewObserver {
         btnForward.setOnAction(event -> historyForward());
 
         crumbBar.setOnCrumbAction(bae -> {
-            modelCRUD.loadFork(bae.getSelectedCrumb());
+            modelCRUD.loadFork(bae.getSelectedCrumb().getValue());
             if (!crumbBar.getSelectedCrumb().equals(history.get(historyIndex))) historyBack();
         });
 
@@ -86,7 +86,7 @@ public class TopToolBar extends BorderPane implements ViewObserver {
 
         searchBox.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
             if (event.getCode() == KeyCode.ENTER && currentNode != null)
-                modelCRUD.treeSearch(currentNode, searchBox.getText());
+                modelCRUD.treeSearch(currentNode.getValue(), searchBox.getText());
         });
 
         setLeft(buttonsPane);
@@ -106,7 +106,7 @@ public class TopToolBar extends BorderPane implements ViewObserver {
             historyIndex--;
             TreeItem<File> item = history.get(historyIndex);
             crumbBar.setSelectedCrumb(item);
-            modelCRUD.loadFork(item);
+            modelCRUD.loadFork(item.getValue());
             btnForward.setDisable(false);
         }
         if (historyIndex == 0) btnBack.setDisable(true);
@@ -120,7 +120,7 @@ public class TopToolBar extends BorderPane implements ViewObserver {
             historyIndex++;
             TreeItem<File> item = history.get(historyIndex);
             crumbBar.setSelectedCrumb(item);
-            modelCRUD.loadFork(item);
+            modelCRUD.loadFork(item.getValue());
             btnBack.setDisable(false);
         }
         if (historyIndex + 1 == history.size()) btnForward.setDisable(true);

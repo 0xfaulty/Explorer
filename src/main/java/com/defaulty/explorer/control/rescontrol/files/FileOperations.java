@@ -8,9 +8,8 @@ public interface FileOperations {
      * Открыть с помощью ассоциативной для него в системе программы.
      *
      * @param file - открываемый файл.
-     * @throws Exception - ошибки при открытии.
      */
-    void open(File file) throws Exception;
+    void open(File file);
 
     /**
      * Вырезать элемент для предпологаемой последующей вставки.
@@ -30,9 +29,8 @@ public interface FileOperations {
      * Вставка элемента.
      *
      * @param destParentFolder - узел для вставки
-     * @throws Exception - ошибки при вставке.
      */
-    void paste(File destParentFolder) throws Exception;
+    void paste(File destParentFolder);
 
     /**
      * Удалить элемент.

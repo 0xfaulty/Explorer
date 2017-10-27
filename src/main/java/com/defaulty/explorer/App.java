@@ -3,7 +3,6 @@ package com.defaulty.explorer;
 import com.defaulty.explorer.control.ThemeType;
 import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.control.observer.ViewConnectorImpl;
-import com.defaulty.explorer.model.item.FilteredTreeItemImpl;
 import com.defaulty.explorer.model.tree.TreeModel;
 import com.defaulty.explorer.model.tree.TreeModelImpl;
 import com.defaulty.explorer.panels.bottom.BottomBar;
@@ -20,6 +19,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.FileFilter;
 
 /**
  * @author 0xFaulty
@@ -42,7 +42,9 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            TreeModel treeModel = new TreeModelImpl();
+            FileFilter fileFilter = e -> !e.isHidden();
+
+            TreeModel treeModel = new TreeModelImpl(fileFilter);
             ViewConnector connector = new ViewConnectorImpl(treeModel);
 
             VBox menus = new VBox();
@@ -58,7 +60,7 @@ public class App extends Application {
             rootPane.setBottom(new BottomBar(connector));
 
             connector.changeTheme(ThemeType.LIGHT);
-            treeModel.loadFork(new FilteredTreeItemImpl(new File("/"), e -> !e.isHidden()));
+            treeModel.loadFork(new File("/"));
 
             primaryStage.getIcons().add(new Image(
                     App.class.getClassLoader().getResourceAsStream("icons/big/folder_c.png")));

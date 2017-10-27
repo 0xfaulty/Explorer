@@ -15,10 +15,10 @@ import java.io.File;
  */
 public class FilePopupMenu extends ContextMenu implements ViewObserver {
 
-    private TreeItem<File> currentItem;
+    private File currentItem;
     private MenuItem pastMenu;
 
-    private TreeItem<File> currentRoot;
+    private File currentRoot;
 
     private final ModelCRUD modelCRUD;
 
@@ -28,12 +28,12 @@ public class FilePopupMenu extends ContextMenu implements ViewObserver {
 
         MenuItem openMenu = getMenuItem("Открыть", () -> modelCRUD.open(currentItem));
         SeparatorMenuItem separator1 = new SeparatorMenuItem();
-        MenuItem cutMenu = getMenuItem("Вырезать", () -> modelCRUD.cut(currentItem, currentRoot));
+        MenuItem cutMenu = getMenuItem("Вырезать", () -> modelCRUD.cut(currentItem));
         MenuItem copyMenu = getMenuItem("Копировать", () -> modelCRUD.copy(currentItem));
         pastMenu = getMenuItem("Вставить", () -> modelCRUD.paste(currentRoot));
         pastMenu.setVisible(false);
         SeparatorMenuItem separator2 = new SeparatorMenuItem();
-        MenuItem deleteMenu = getMenuItem("Удалить", () -> modelCRUD.delete(currentItem, currentRoot));
+        MenuItem deleteMenu = getMenuItem("Удалить", () -> modelCRUD.delete(currentItem));
         //MenuItem renameMenu = getMenuItem("Переименовать", () -> fileOperations.rename(currentItem, newFile));
         MenuItem createFolderMenu = getMenuItem("Создать папку", () -> modelCRUD.createFolderIn(currentRoot));
 
@@ -62,7 +62,7 @@ public class FilePopupMenu extends ContextMenu implements ViewObserver {
      * @param anchor - родительское окно.
      * @param event - событие мыши для определения места отрисоки меню.
      */
-    public void show(TreeItem<File> currentItem, Node anchor, MouseEvent event) {
+    public void show(File currentItem, Node anchor, MouseEvent event) {
         this.currentItem = currentItem;
         requestFocus();
         pastMenu.setVisible(modelCRUD.isCopyOrCut());
@@ -73,7 +73,7 @@ public class FilePopupMenu extends ContextMenu implements ViewObserver {
     public void receiveEvent(ViewEvent event) {
         switch (event.getEventType()) {
             case CHANGE_FORK:
-                currentRoot = event.getFork();
+                currentRoot = event.getFork().getValue();
                 break;
         }
     }

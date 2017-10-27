@@ -69,14 +69,14 @@ public class FileTable extends BorderPane implements ViewObserver {
             if (mouseEvent.getClickCount() == 2 && mouseEvent.getButton() == MouseButton.PRIMARY) {
                 if (table.getSelectionModel().getSelectedItem() != null) {
                     if (table.getSelectionModel().getSelectedItem().getValue().isDirectory())
-                        modelCRUD.loadFork(table.getSelectionModel().getSelectedItem());
+                        modelCRUD.loadFork(table.getSelectionModel().getSelectedItem().getValue());
                 }
             }
             if (mouseEvent.getClickCount() == 1) {
                 if (mouseEvent.getButton() == MouseButton.SECONDARY) {
                     TreeItem<File> item = table.getSelectionModel().getSelectedItem();
                     if (item != null) {
-                        popup.show(item, table, mouseEvent);
+                        popup.show(item.getValue(), table, mouseEvent);
                     }
                 } else
                     popup.hide();
@@ -173,6 +173,8 @@ public class FileTable extends BorderPane implements ViewObserver {
             }
 
             table.sort();
+
+            changeState(fork);
         }
     }
 
