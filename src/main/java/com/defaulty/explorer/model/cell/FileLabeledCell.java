@@ -1,6 +1,6 @@
-package com.defaulty.explorer.model.item;
+package com.defaulty.explorer.model.cell;
 
-import com.defaulty.explorer.control.rescontrol.files.FileOperationsImpl;
+import com.defaulty.explorer.control.rescontrol.files.FileOperations;
 import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
 import com.defaulty.explorer.control.rescontrol.image.ImageSizePack;
 import javafx.scene.control.*;
@@ -13,23 +13,21 @@ import java.util.HashMap;
  * Класс как фабрика ячеек типов {@code TreeCell<File>} и {@code TableCell<TreeItem<File>}.
  * Добавляет некоторые дополнительные свойства ячейкам.
  */
-public class FileLabeledCell {
+public class FileLabeledCell implements LabeledCell {
 
     private TreeCell<File> treeCell;
     private TableCell<TreeItem<File>, File> tableCell;
 
-    private final HashMap<File, FileLabeledCell> cellHashMap;
+    private final HashMap<File, FileLabeledCell> cellHash;
 
     private TextField textField;
 
-    private boolean waitFlag;
-
     private Labeled labeled;
 
-    private Runnable startEdit;
+    private FileOperations fo = null;
 
-    public FileLabeledCell(TreeView<File> treeView, HashMap<File, FileLabeledCell> cellHashMap) {
-        this.cellHashMap = cellHashMap;
+    public FileLabeledCell(TreeView<File> treeView, HashMap<File, FileLabeledCell> cellHash) {
+        this.cellHash = cellHash;
         treeCell = new TreeCell<File>() {
             @Override
             protected void updateItem(File item, boolean empty) {
@@ -40,23 +38,18 @@ public class FileLabeledCell {
         };
     }
 
-    public FileLabeledCell(TableView<TreeItem<File>> tableView, HashMap<File, FileLabeledCell> cellHashMap) {
-        this.cellHashMap = cellHashMap;
+    public FileLabeledCell(TableView<TreeItem<File>> tableView, HashMap<File, FileLabeledCell> cellHash) {
+        this.cellHash = cellHash;
         tableCell = new TableCell<TreeItem<File>, File>() {
 
             @Override
             public void startEdit() {
                 super.startEdit();
 
-                if (waitFlag) {
-                    if (textField == null) {
-                        createTextField();
-                    }
-                    setText(null);
-                    setGraphic(textField);
-                    textField.selectAll();
-                } else
-                    waitFlag = true;
+                if (textField == null) createTextField();
+                setText(null);
+                setGraphic(textField);
+                textField.selectAll();
             }
 
             @Override
@@ -89,8 +82,8 @@ public class FileLabeledCell {
                 textField.setMinWidth(this.getWidth() - this.getGraphicTextGap() * 2);
                 textField.focusedProperty().addListener((arg0, arg1, arg2) -> {
                     if (!arg2) {
-                        rename(textField.getText());
-                        commitEdit(getItem());
+                        rename(textField.getText(), getItem(), this);
+                        updateItem(getItem(), false);
                     }
                 });
 
@@ -98,25 +91,13 @@ public class FileLabeledCell {
                     if (t.getCode() == KeyCode.ENTER) {
                         String value = textField.getText();
                         if (value != null) {
-                            rename(textField.getText());
-                            commitEdit(getItem());
-                        } else {
-                            commitEdit(null);
+                            rename(textField.getText(), getItem(), this);
                         }
+                        updateItem(getItem(), false);
                     } else if (t.getCode() == KeyCode.ESCAPE) {
                         cancelEdit();
                     }
                 });
-            }
-
-            private void rename(String newName) {
-                File sourceFile = getItem();
-                String path = sourceFile.getParentFile().getAbsolutePath();
-                File newFile = new File(path + "\\" + newName);
-                //TODO: убрать явное создание FileOperationsImpl
-                new FileOperationsImpl().rename(sourceFile, newFile);
-                setItem(newFile);
-                updateView(tableCell, newFile, false);
             }
 
             private String getString() {
@@ -126,7 +107,6 @@ public class FileLabeledCell {
     }
 
     private void updateView(Labeled labeled, File file, boolean empty) {
-        waitFlag = false;
         if (file == null || empty) {
             labeled.setText(null);
             labeled.setGraphic(null);
@@ -135,7 +115,7 @@ public class FileLabeledCell {
             labeled.setText(file.getParentFile() == null ? file.getAbsolutePath() : file.getName());
             labeled.setGraphic(new ImageSetter().getImageView(file, ImageSizePack.ImageSize.SMALL));
             this.labeled = labeled;
-            cellHashMap.put(file, this);
+            cellHash.put(file, this);
         }
     }
 
@@ -149,5 +129,22 @@ public class FileLabeledCell {
 
     public Labeled getLabeled() {
         return labeled;
+    }
+
+    private void rename(String newName, File sourceFile, TableCell<TreeItem<File>, File> cell) {
+        if (fo != null) {
+            String path = sourceFile.getParentFile().getAbsolutePath();
+            File newFile = new File(path + "\\" + newName);
+            if (fo.rename(sourceFile, newFile)) {
+                cell.setItem(newFile);
+                updateView(tableCell, newFile, false);
+            }
+        }
+    }
+
+    @Override
+    public void startEditCell(FileOperations fo) {
+        this.fo = fo;
+        tableCell.startEdit();
     }
 }

@@ -36,8 +36,9 @@ public interface FileOperations {
      * Удалить элемент.
      *
      * @param file - элемент для удаления.
+     * @return - успех операции.
      */
-    void delete(File file);
+    boolean delete(File file);
 
     /**
      * Переименовать элемент.
@@ -62,5 +63,19 @@ public interface FileOperations {
      * @return - наличие элемента.
      */
     boolean isCopyOrCut();
+
+    /**
+     * Получить файл из буфера копирования или вырезки.
+     *
+     * @return - файл.
+     */
+    File getBuffFile();
+
+    /**
+     * Получить значение флага вырезки элемента.
+     *
+     * @return - значение флага.
+     */
+    boolean isCutFlag();
 
 }

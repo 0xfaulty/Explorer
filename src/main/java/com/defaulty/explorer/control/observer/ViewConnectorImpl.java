@@ -5,7 +5,7 @@ import com.defaulty.explorer.control.events.EventType;
 import com.defaulty.explorer.control.events.ViewEvent;
 import com.defaulty.explorer.control.events.ViewEventImpl;
 import com.defaulty.explorer.model.search.SearchTask;
-import com.defaulty.explorer.model.tree.ModelCRUD;
+import com.defaulty.explorer.model.tree.ModelOperations;
 import com.defaulty.explorer.model.tree.TreeModel;
 import com.defaulty.explorer.panels.center.ViewType;
 import javafx.scene.control.TreeItem;
@@ -92,7 +92,7 @@ public class ViewConnectorImpl implements ViewConnectorModel {
     }
 
     @Override
-    public ModelCRUD getModelCRUD() {
+    public ModelOperations getModelCRUD() {
         return treeModel;
     }
 

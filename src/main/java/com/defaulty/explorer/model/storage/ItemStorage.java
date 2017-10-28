@@ -1,4 +1,4 @@
-package com.defaulty.explorer.model.item;
+package com.defaulty.explorer.model.storage;
 
 import javafx.scene.control.TreeItem;
 
@@ -36,5 +36,20 @@ public interface ItemStorage {
      * @return - статус наличия элемента.
      */
     boolean isHashed(File file);
+
+    /**
+     * Удалить элемент из хранилища.
+     *
+     * @param file - удаляемый элемент.
+     */
+    void removeItem(File file);
+
+    /**
+     * Сделать копию указанного элемента с другим идентификатором.
+     *
+     * @param source - копируемый элемент.
+     * @param dest   - новый элемент.
+     */
+    void copyItem(File source, File dest);
 
 }

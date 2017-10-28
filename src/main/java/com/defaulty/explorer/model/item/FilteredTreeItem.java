@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Контракт для класса расширяющего функционал элемента дерева.
  */
-public interface FilteredTreeItem {
+public interface FilteredTreeItem extends Cloneable {
 
     /**
      * Получить дочерние файлы.
@@ -32,5 +32,7 @@ public interface FilteredTreeItem {
      * @return - тип иконки.
      */
     FolderIcons getIconType();
+
+    TreeItem<File> getClone();
 
 }

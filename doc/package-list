@@ -6,8 +6,10 @@ com.defaulty.explorer.control.rescontrol
 com.defaulty.explorer.control.rescontrol.files
 com.defaulty.explorer.control.rescontrol.image
 com.defaulty.explorer.model
+com.defaulty.explorer.model.cell
 com.defaulty.explorer.model.item
 com.defaulty.explorer.model.search
+com.defaulty.explorer.model.storage
 com.defaulty.explorer.model.tree
 com.defaulty.explorer.panels
 com.defaulty.explorer.panels.bottom

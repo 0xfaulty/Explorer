@@ -8,7 +8,7 @@ import java.io.File;
 /**
  * Контракт для модели, включающий операции с файлами.
  */
-public interface ModelCRUD extends FileOperations {
+public interface ModelOperations extends FileOperations {
 
     /**
      * Вызвов подгрузки к дереву указанной ветки.

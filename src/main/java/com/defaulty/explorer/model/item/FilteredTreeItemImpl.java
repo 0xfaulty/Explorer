@@ -2,17 +2,14 @@ package com.defaulty.explorer.model.item;
 
 import com.defaulty.explorer.control.rescontrol.files.TypeSetter;
 import com.defaulty.explorer.control.rescontrol.image.FolderIcons;
-import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
+import com.defaulty.explorer.model.tree.TreeBackPoint;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 /**
  * Класс наследуемый от {@code TreeItem<File>} поддерживающий контракт {@code FilteredTreeItem}.
@@ -27,24 +24,26 @@ public class FilteredTreeItemImpl extends TreeItem<File> implements FilteredTree
 
     private FolderIcons iconType = FolderIcons.UNLOAD_FOLDER;
 
-    private File itemFile;
+    private final TreeBackPoint changeBackPoint;
+
     private String itemSize;
     private String itemType;
     private String itemData;
 
-    public FilteredTreeItemImpl(File file) {
+    public FilteredTreeItemImpl(File file, TreeBackPoint changeBackPoint) {
         super(file);
 
-        itemFile = file;
         itemSize = file.isDirectory() ? "" : readableSize(file.length());
         itemType = TypeSetter.getFileType(file);
         itemData = new SimpleDateFormat().format(new Date(file.lastModified()));
+        this.changeBackPoint = changeBackPoint;
 
         Runnable eventHandler = () -> {
             if (isExpanded())
                 setIconType(FolderIcons.OPEN_FOLDER);
             else
                 setIconType(FolderIcons.CLOSE_FOLDER);
+            changeBackPoint.accept(getValue());
         };
 
         addEventHandler(TreeItem.branchExpandedEvent(), event -> eventHandler.run());
@@ -78,7 +77,7 @@ public class FilteredTreeItemImpl extends TreeItem<File> implements FilteredTree
     @Override
     public int hashCode() {
         int result = (getValue().isDirectory() ? 1 : 0);
-        result = 31 * result + (itemFile != null ? itemFile.hashCode() : 0);
+        result = 31 * result + (getValue() != null ? getValue().hashCode() : 0);
         return result;
     }
 
@@ -98,10 +97,6 @@ public class FilteredTreeItemImpl extends TreeItem<File> implements FilteredTree
 
     }
 
-    public File getItemFile() {
-        return itemFile;
-    }
-
     public String getItemSize() {
         return itemSize;
     }
@@ -112,6 +107,16 @@ public class FilteredTreeItemImpl extends TreeItem<File> implements FilteredTree
 
     public String getItemData() {
         return itemData;
+    }
+
+    @Override
+    public TreeItem<File> getClone() {
+        FilteredTreeItemImpl fti = new FilteredTreeItemImpl(getValue(), changeBackPoint);
+        fti.getChildren().setAll(getChildren());
+        fti.fileChildren.setAll(fileChildren);
+        fti.iconType = iconType;
+
+        return fti;
     }
 
 }

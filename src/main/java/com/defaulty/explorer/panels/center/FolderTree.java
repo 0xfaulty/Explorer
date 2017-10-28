@@ -6,8 +6,8 @@ import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.control.observer.ViewObserver;
 import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
 import com.defaulty.explorer.control.rescontrol.image.ImageSizePack;
-import com.defaulty.explorer.model.item.FileLabeledCell;
-import com.defaulty.explorer.model.tree.ModelCRUD;
+import com.defaulty.explorer.model.cell.FileLabeledCell;
+import com.defaulty.explorer.model.tree.ModelOperations;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TreeItem;
@@ -24,14 +24,14 @@ import java.util.HashMap;
  */
 public class FolderTree extends BorderPane implements ViewObserver {
 
-    private final ModelCRUD modelCRUD;
+    private final ModelOperations modelOperations;
     private final TreeView<File> tree = new TreeView<>();
 
     private HashMap<File, FileLabeledCell> cellHashMap = new HashMap<>();
 
     public FolderTree(ViewConnector connector) {
         connector.register(this);
-        this.modelCRUD = connector.getModelCRUD();
+        this.modelOperations = connector.getModelCRUD();
         setCenter(tree);
         setMinWidth(200);
         SplitPane.setResizableWithParent(this, false);
@@ -47,13 +47,13 @@ public class FolderTree extends BorderPane implements ViewObserver {
         tree.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
             if (isArrowKeys(event)) {
                 TreeItem<File> item = tree.getSelectionModel().getSelectedItem();
-                if (item != null) modelCRUD.loadFork(item.getValue());
+                if (item != null) modelOperations.loadFork(item.getValue());
             }
         });
         tree.setOnMouseClicked(mouseEvent -> {
-            if (mouseEvent.getClickCount() == 1){
+            if (mouseEvent.getClickCount() == 1) {
                 TreeItem<File> item = tree.getSelectionModel().getSelectedItem();
-                if (item != null) modelCRUD.loadFork(item.getValue());
+                if (item != null) modelOperations.loadFork(item.getValue());
             }
         });
         tree.setCellFactory(param -> new FileLabeledCell(tree, cellHashMap).getTreeCell());
@@ -62,6 +62,7 @@ public class FolderTree extends BorderPane implements ViewObserver {
 
     /**
      * Проверяет является ли нажатая клавиша кнопкой стрелок.
+     *
      * @param event - событие нажатия.
      * @return - результат проверки.
      */
@@ -86,23 +87,27 @@ public class FolderTree extends BorderPane implements ViewObserver {
     }
 
     /**
-     * Обновить состояние объекта
+     * Обновить состояние объекта дерева. Чтобы не обновлять свёрнутые
+     * ячейки добавлена проверка на развернутость родителя, которая
+     * пропускается в случае с корневым элементом у которого нет родителя.
      *
      * @param fork - обновляемый объект.
      */
     private void changeState(TreeItem<File> fork) {
         if (fork != null && fork.getValue() != null) {
-            FileLabeledCell cell = cellHashMap.get(fork.getValue());
-            if (cell != null) {
-                Labeled labeled = cell.getLabeled();
-                if (labeled != null)
-                    labeled.setGraphic(new ImageSetter().getImageView(fork, ImageSizePack.ImageSize.SMALL));
+            if (fork.getParent() == null || fork.getParent().isExpanded()) {
+                FileLabeledCell cell = cellHashMap.get(fork.getValue());
+                if (cell != null) {
+                    Labeled labeled = cell.getLabeled();
+                    if (labeled != null)
+                        labeled.setGraphic(new ImageSetter().getImageView(fork, ImageSizePack.ImageSize.SMALL));
+                }
             }
         }
     }
 
     /**
-     * Сменить отображаемую ветку
+     * Сменить отображаемую ветку.
      *
      * @param fork - новая ветка.
      */
@@ -118,10 +123,10 @@ public class FolderTree extends BorderPane implements ViewObserver {
     private void setTheme(ThemeType t) {
         switch (t) {
             case DARK:
-                //tree.getStylesheets().setAll("css/table-dark.css");
+                //tree.getStylesheets().addAll("css/tree-dark.css");
                 break;
             case LIGHT:
-                //tree.getStylesheets().setAll("css/table-light.css");
+                //tree.getStylesheets().addAll("css/tree-light.css");
                 break;
         }
     }

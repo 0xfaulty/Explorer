@@ -3,9 +3,13 @@ package com.defaulty.explorer.panels;
 import com.defaulty.explorer.control.events.ViewEvent;
 import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.control.observer.ViewObserver;
-import com.defaulty.explorer.model.tree.ModelCRUD;
+import com.defaulty.explorer.model.cell.LabeledCell;
+import com.defaulty.explorer.model.tree.ModelOperations;
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.MouseEvent;
 
 import java.io.File;
@@ -20,31 +24,34 @@ public class FilePopupMenu extends ContextMenu implements ViewObserver {
 
     private File currentRoot;
 
-    private final ModelCRUD modelCRUD;
+    private LabeledCell labeledCell;
+
+    private final ModelOperations modelOperations;
 
     public FilePopupMenu(ViewConnector connector) {
         connector.register(this);
-        this.modelCRUD = connector.getModelCRUD();
+        this.modelOperations = connector.getModelCRUD();
 
-        MenuItem openMenu = getMenuItem("Открыть", () -> modelCRUD.open(currentItem));
+        MenuItem openMenu = getMenuItem("Открыть", () -> modelOperations.open(currentItem));
         SeparatorMenuItem separator1 = new SeparatorMenuItem();
-        MenuItem cutMenu = getMenuItem("Вырезать", () -> modelCRUD.cut(currentItem));
-        MenuItem copyMenu = getMenuItem("Копировать", () -> modelCRUD.copy(currentItem));
-        pastMenu = getMenuItem("Вставить", () -> modelCRUD.paste(currentRoot));
+        MenuItem cutMenu = getMenuItem("Вырезать", () -> modelOperations.cut(currentItem));
+        MenuItem copyMenu = getMenuItem("Копировать", () -> modelOperations.copy(currentItem));
+        pastMenu = getMenuItem("Вставить", () -> modelOperations.paste(currentRoot));
         pastMenu.setVisible(false);
         SeparatorMenuItem separator2 = new SeparatorMenuItem();
-        MenuItem deleteMenu = getMenuItem("Удалить", () -> modelCRUD.delete(currentItem));
-        //MenuItem renameMenu = getMenuItem("Переименовать", () -> fileOperations.rename(currentItem, newFile));
-        MenuItem createFolderMenu = getMenuItem("Создать папку", () -> modelCRUD.createFolderIn(currentRoot));
+        MenuItem deleteMenu = getMenuItem("Удалить", () -> modelOperations.delete(currentItem));
+        MenuItem renameMenu = getMenuItem("Переименовать", () -> labeledCell.startEditCell(modelOperations));
+        MenuItem createFolderMenu = getMenuItem("Создать папку", () -> modelOperations.createFolderIn(currentRoot));
 
-        getItems().addAll(openMenu, separator1, cutMenu, copyMenu, pastMenu,
+        getItems().addAll(openMenu, separator1, cutMenu, copyMenu, pastMenu, renameMenu,
                 separator2, deleteMenu, createFolderMenu);
     }
 
     /**
      * Создание объекта меню.
+     *
      * @param name - отображаемое название.
-     * @param run - вызываемый метод.
+     * @param run  - вызываемый метод.
      * @return - созданный пункт меню.
      */
     private MenuItem getMenuItem(String name, Runnable run) {
@@ -58,14 +65,17 @@ public class FilePopupMenu extends ContextMenu implements ViewObserver {
 
     /**
      * Показать всплывающую панель.
+     *
+     * @param labeledCell - ячейка с которой вызвана панель.
      * @param currentItem - элемент с которого вызвана панель.
-     * @param anchor - родительское окно.
-     * @param event - событие мыши для определения места отрисоки меню.
+     * @param anchor      - родительское окно.
+     * @param event       - событие мыши для определения места отрисоки меню.
      */
-    public void show(File currentItem, Node anchor, MouseEvent event) {
+    public void show(LabeledCell labeledCell, File currentItem, Node anchor, MouseEvent event) {
         this.currentItem = currentItem;
+        this.labeledCell = labeledCell;
         requestFocus();
-        pastMenu.setVisible(modelCRUD.isCopyOrCut());
+        pastMenu.setVisible(modelOperations.isCopyOrCut());
         show(anchor, event.getScreenX(), event.getScreenY());
     }
 

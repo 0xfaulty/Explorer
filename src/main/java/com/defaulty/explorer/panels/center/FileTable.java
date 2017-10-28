@@ -6,9 +6,9 @@ import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.control.observer.ViewObserver;
 import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
 import com.defaulty.explorer.control.rescontrol.image.ImageSizePack;
-import com.defaulty.explorer.model.item.FileLabeledCell;
+import com.defaulty.explorer.model.cell.FileLabeledCell;
 import com.defaulty.explorer.model.item.FilteredTreeItem;
-import com.defaulty.explorer.model.tree.ModelCRUD;
+import com.defaulty.explorer.model.tree.ModelOperations;
 import com.defaulty.explorer.panels.FilePopupMenu;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
@@ -28,7 +28,7 @@ import java.util.HashMap;
 public class FileTable extends BorderPane implements ViewObserver {
 
     private final FilePopupMenu popup;
-    private final ModelCRUD modelCRUD;
+    private final ModelOperations modelOperations;
     private TableView<TreeItem<File>> table = new TableView<>();
     private TreeItem<File> currentRoot;
 
@@ -36,7 +36,7 @@ public class FileTable extends BorderPane implements ViewObserver {
 
     public FileTable(ViewConnector connector) {
         connector.register(this);
-        this.modelCRUD = connector.getModelCRUD();
+        this.modelOperations = connector.getModelCRUD();
         popup = new FilePopupMenu(connector);
         init();
     }
@@ -45,7 +45,7 @@ public class FileTable extends BorderPane implements ViewObserver {
      * Инициализация таблицы.
      */
     private void init() {
-        TableColumn<TreeItem<File>, File> nameCol = getColumn("Имя", "itemFile", 200);
+        TableColumn<TreeItem<File>, File> nameCol = getColumn("Имя", "value", 200);
         TableColumn<TreeItem<File>, String> sizeCol = getColumn("Размер", "itemSize", 100);
         TableColumn<TreeItem<File>, String> typeCol = getColumn("Тип", "itemType", 150);
         TableColumn<TreeItem<File>, String> changeDateCol = getColumn("Дата", "itemData", 200);
@@ -64,19 +64,19 @@ public class FileTable extends BorderPane implements ViewObserver {
         table.getColumns().add(typeCol);
         table.getColumns().add(changeDateCol);
         table.getSortOrder().add(nameCol);
-        table.setEditable(true);
+        table.setEditable(false);
         table.setOnMouseClicked(mouseEvent -> {
             if (mouseEvent.getClickCount() == 2 && mouseEvent.getButton() == MouseButton.PRIMARY) {
                 if (table.getSelectionModel().getSelectedItem() != null) {
                     if (table.getSelectionModel().getSelectedItem().getValue().isDirectory())
-                        modelCRUD.loadFork(table.getSelectionModel().getSelectedItem().getValue());
+                        modelOperations.loadFork(table.getSelectionModel().getSelectedItem().getValue());
                 }
             }
             if (mouseEvent.getClickCount() == 1) {
                 if (mouseEvent.getButton() == MouseButton.SECONDARY) {
                     TreeItem<File> item = table.getSelectionModel().getSelectedItem();
                     if (item != null) {
-                        popup.show(item.getValue(), table, mouseEvent);
+                        popup.show(cellHashMap.get(item.getValue()), item.getValue(), table, mouseEvent);
                     }
                 } else
                     popup.hide();
@@ -186,10 +186,10 @@ public class FileTable extends BorderPane implements ViewObserver {
     private void setTheme(ThemeType t) {
         switch (t) {
             case DARK:
-                table.getStylesheets().setAll("css/table-dark.css");
+                table.getStylesheets().addAll("css/table-dark.css");
                 break;
             case LIGHT:
-                table.getStylesheets().setAll("css/table-light.css");
+                table.getStylesheets().addAll("css/table-light.css");
                 break;
         }
     }

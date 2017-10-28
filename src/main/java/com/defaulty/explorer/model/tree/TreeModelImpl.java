@@ -6,9 +6,9 @@ import com.defaulty.explorer.control.rescontrol.files.FileOperationsImpl;
 import com.defaulty.explorer.control.rescontrol.image.FolderIcons;
 import com.defaulty.explorer.control.rescontrol.image.ImageSetter;
 import com.defaulty.explorer.model.item.FilteredTreeItem;
-import com.defaulty.explorer.model.item.ItemStorageImpl;
 import com.defaulty.explorer.model.search.SearchTask;
 import com.defaulty.explorer.model.search.SearchTaskImpl;
+import com.defaulty.explorer.model.storage.ItemStorageImpl;
 import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
 
@@ -29,12 +29,23 @@ public class TreeModelImpl implements TreeModel {
     private boolean firstNode = true;
 
     public TreeModelImpl(FileFilter fileFilter) {
-        storage = new ItemStorageImpl(fileFilter);
+        storage = new ItemStorageImpl(fileFilter, this::itemChange);
     }
 
     @Override
     public void setViewConnector(ViewConnectorModel viewConnector) {
         this.viewConnector = viewConnector;
+    }
+
+    /**
+     * Слушатель изменений в элементе.
+     *
+     * @param file - изменившийся элемент.
+     */
+    private void itemChange(File file) {
+        TreeItem<File> item = storage.getTreeItem(file);
+        if (item instanceof FilteredTreeItem)
+            imageSetter.setFolderImageView(file, ((FilteredTreeItem) item).getIconType());
     }
 
     @Override
@@ -48,7 +59,7 @@ public class TreeModelImpl implements TreeModel {
                     imageSetter.setFolderImageView(file, FolderIcons.CLOSE_FOLDER);
                     Platform.runLater(() -> {
                         viewConnector.changeState(storage.getTreeItem(file));
-                        if(firstNode) {
+                        if (firstNode) {
                             firstNode = false;
                             viewConnector.changeFork(storage.getTreeItem(file));
                         }
@@ -85,19 +96,12 @@ public class TreeModelImpl implements TreeModel {
 
     @Override
     public void open(File file) {
-        try {
-            fo.open(file);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        fo.open(file);
     }
 
     @Override
     public void cut(File sourceFile) {
         fo.cut(sourceFile);
-        TreeItem<File> fork = storage.getTreeItem(sourceFile);
-        removeTreeChild(fork, fork.getParent());
-        loadFork(fork.getParent().getValue()); //TODO:?
     }
 
     @Override
@@ -107,20 +111,26 @@ public class TreeModelImpl implements TreeModel {
 
     @Override
     public void paste(File destParentFolder) {
-        try {
-            fo.paste(destParentFolder);
-            loadFork(destParentFolder);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        File buffFile = fo.getBuffFile();
+        storage.copyItem(buffFile, new File(
+                destParentFolder.getAbsolutePath() + "\\" + buffFile.getName()));
+        if (fo.isCutFlag())
+            storage.removeItem(buffFile);
+        fo.paste(destParentFolder);
+        loadFork(destParentFolder);
     }
 
     @Override
-    public void delete(File file) {
-        fo.delete(file);
-        TreeItem<File> fork = storage.getTreeItem(file);
-        removeTreeChild(fork, fork.getParent());
-        loadFork(fork.getParent().getValue()); //TODO:?
+    public boolean delete(File file) {
+        if (fo.delete(file)) {
+            TreeItem<File> fork = storage.getTreeItem(file);
+            File reloadFolder = fork.getParent().getValue();
+            removeTreeChild(fork, fork.getParent());
+            storage.removeItem(file);
+            loadFork(reloadFolder);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -139,7 +149,13 @@ public class TreeModelImpl implements TreeModel {
 
     @Override
     public boolean rename(File sourceFile, File destFile) {
-        return fo.rename(sourceFile, destFile);
+        if (fo.rename(sourceFile, destFile)) {
+            storage.copyItem(sourceFile, destFile);
+            storage.removeItem(sourceFile);
+            loadFork(storage.getTreeItem(destFile).getParent().getValue());
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -157,6 +173,16 @@ public class TreeModelImpl implements TreeModel {
     @Override
     public boolean isCopyOrCut() {
         return fo.isCopyOrCut();
+    }
+
+    @Override
+    public File getBuffFile() {
+        return fo.getBuffFile();
+    }
+
+    @Override
+    public boolean isCutFlag() {
+        return fo.isCutFlag();
     }
 
 }

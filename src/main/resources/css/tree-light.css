@@ -1,0 +1,4 @@
+.tree-view, .tree-cell {
+    -fx-background-color: #f4f5f7 ;
+    -fx-text-fill: black ;
+}

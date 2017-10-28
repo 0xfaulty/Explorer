@@ -4,36 +4,47 @@ import com.defaulty.explorer.control.ThemeType;
 import com.defaulty.explorer.control.events.ViewEvent;
 import com.defaulty.explorer.control.observer.ViewConnector;
 import com.defaulty.explorer.control.observer.ViewObserver;
-import com.defaulty.explorer.model.tree.ModelCRUD;
+import com.defaulty.explorer.model.tree.ModelOperations;
+import com.defaulty.explorer.panels.center.ViewType;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TreeItem;
 
 import java.io.File;
 
 public class TopMenuBar extends MenuBar implements ViewObserver {
 
-    private final ModelCRUD modelCRUD;
+    private final ModelOperations modelOperations;
     private File currentRoot;
 
     public TopMenuBar(ViewConnector connector) {
         connector.register(this);
-        modelCRUD = connector.getModelCRUD();
+        modelOperations = connector.getModelCRUD();
 
         Menu menuFile = new Menu("Файл");
         MenuItem createNewFolder = new MenuItem("Создать папку");
-        createNewFolder.setOnAction(event -> modelCRUD.createFolderIn(currentRoot));
+        createNewFolder.setOnAction(event -> modelOperations.createFolderIn(currentRoot));
         menuFile.getItems().addAll(createNewFolder);
 
         Menu menuEdit = new Menu("Правка");
 
         Menu menuView = new Menu("Вид");
+
+        Menu menuViewViews = new Menu("Отображения");
+        MenuItem tableView = new MenuItem("Таблица");
+        tableView.setOnAction(event -> connector.changeRightView(ViewType.TABLE));
+        MenuItem gridView = new MenuItem("Сетка");
+        gridView.setOnAction(event -> connector.changeRightView(ViewType.GRID));
+        menuViewViews.getItems().addAll(tableView, gridView);
+
+        Menu menuViewThemes = new Menu("Темы");
         MenuItem darkTheme = new MenuItem("Темная тема");
         darkTheme.setOnAction(event -> connector.changeTheme(ThemeType.DARK));
         MenuItem lightTheme = new MenuItem("Светлая тема");
         lightTheme.setOnAction(event -> connector.changeTheme(ThemeType.LIGHT));
-        menuView.getItems().addAll(darkTheme, lightTheme);
+        menuViewThemes.getItems().addAll(darkTheme, lightTheme);
+
+        menuView.getItems().addAll(menuViewViews, menuViewThemes);
 
         Menu menuHelp = new Menu("Справка");
         MenuItem about = new MenuItem("О программе");

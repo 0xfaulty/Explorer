@@ -1,17 +1,24 @@
 package com.defaulty.explorer.model.search;
 
+import com.defaulty.explorer.model.tree.TreeBackPoint;
 import javafx.application.Platform;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Класс поддерживающий контракт {@code SearchTask} и {@code Runnable}
+ */
 public class SearchTaskImpl implements Runnable, SearchTask {
 
     private final File root;
     private final String string;
     private TreeBackPoint backPoint;
 
+    /**
+     * Список слушателей события увеличения счётчика найденных элементов.
+     */
     private List<Runnable> counterInputs = new ArrayList<>();
 
     private int counter = 0;
@@ -27,6 +34,11 @@ public class SearchTaskImpl implements Runnable, SearchTask {
         recurseSearch(root, string);
     }
 
+    /**
+     * Куруксивный поиск по дочерним элементам.
+     * @param node - текущий элемент.
+     * @param s - строка поиска.
+     */
     private void recurseSearch(File node, String s) {
         if (stopFlag) return;
         if (node != null) {

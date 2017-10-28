@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 public class FileOperationsImpl implements FileOperations {
 
-    private File sourceFile = null;
+    private File buffFile;
     private boolean cutFlag;
 
     @Override
@@ -29,29 +29,29 @@ public class FileOperationsImpl implements FileOperations {
 
     @Override
     public void cut(File sourceFile) {
-        this.sourceFile = sourceFile;
+        this.buffFile = sourceFile;
         this.cutFlag = true;
     }
 
     @Override
     public void copy(File sourceFile) {
-        this.sourceFile = sourceFile;
+        this.buffFile = sourceFile;
         this.cutFlag = false;
     }
 
     @Override
     public void paste(File destParentFolder) {
-        if (sourceFile != null && destParentFolder.isDirectory()) {
-            File destFile = new File(destParentFolder.getAbsolutePath() + "\\" + sourceFile.getName());
-            if (!sourceFile.getAbsoluteFile().equals(destFile.getAbsoluteFile())) {
+        if (buffFile != null && destParentFolder.isDirectory()) {
+            File destFile = new File(destParentFolder.getAbsolutePath() + "\\" + buffFile.getName());
+            if (!buffFile.getAbsoluteFile().equals(destFile.getAbsoluteFile())) {
 
                 if (!destFile.exists() || warningAlert(
-                        "Вставка", "Файл \"" + sourceFile.getName() + "\" уже существует, заменить?")) {
+                        "Вставка", "\"" + buffFile.getName() + "\" уже существует, заменить?")) {
                     delete(destFile, true);
-                    copyFile(sourceFile, destFile);
+                    copyFile(buffFile, destFile);
                     if (cutFlag) {
-                        delete(sourceFile, true);
-                        sourceFile = null;
+                        delete(buffFile, true);
+                        buffFile = null;
                     }
                 }
             }
@@ -64,7 +64,7 @@ public class FileOperationsImpl implements FileOperations {
      * @param sourceFile - источник.
      * @param destFile   - место назначения.
      */
-    private void copyFile(File sourceFile, File destFile){
+    private void copyFile(File sourceFile, File destFile) {
         try {
             Files.copy(sourceFile.toPath(), destFile.toPath());
         } catch (IOException e) {
@@ -72,6 +72,13 @@ public class FileOperationsImpl implements FileOperations {
         }
     }
 
+    /**
+     * Вывод диалога инфомации с кнопками да и нет.
+     *
+     * @param header   - заголовок.
+     * @param question - вопрос диалога.
+     * @return нажата ли кнопка да.
+     */
     private boolean warningAlert(String header, String question) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Диалог информации");
@@ -79,13 +86,12 @@ public class FileOperationsImpl implements FileOperations {
         alert.setContentText(question);
 
         Optional<ButtonType> result = alert.showAndWait();
-        return result.get() == ButtonType.OK;
+        return result.filter(buttonType -> buttonType == ButtonType.OK).isPresent();
     }
 
     @Override
     public boolean rename(File sourceFile, File destFile) {
-        File newDestFile = findEmptyName(destFile);
-        return newDestFile != null && sourceFile.renameTo(newDestFile);
+        return !sourceFile.getAbsoluteFile().equals(destFile.getAbsoluteFile()) && sourceFile.renameTo(destFile);
     }
 
     /**
@@ -110,8 +116,8 @@ public class FileOperationsImpl implements FileOperations {
     }
 
     @Override
-    public void delete(File file) {
-        delete(file, false);
+    public boolean delete(File file) {
+        return delete(file, false);
     }
 
     /**
@@ -122,11 +128,12 @@ public class FileOperationsImpl implements FileOperations {
      * @param file  - файл для удаления.
      * @param force - флаг отвечающий за форсирование, т.е. удаление без запроса.
      */
-    private void delete(File file, boolean force) {
+    private boolean delete(File file, boolean force) {
         if (force)
-            file.delete();
+            return file.delete();
         else if (warningAlert("Удаление", "Удалить \"" + file.getName() + "\"?"))
-            file.delete();
+            return file.delete();
+        return false;
     }
 
     @Override
@@ -138,7 +145,17 @@ public class FileOperationsImpl implements FileOperations {
 
     @Override
     public boolean isCopyOrCut() {
-        return sourceFile != null;
+        return buffFile != null;
+    }
+
+    @Override
+    public File getBuffFile() {
+        return buffFile;
+    }
+
+    @Override
+    public boolean isCutFlag() {
+        return cutFlag;
     }
 
 }

@@ -1,4 +1,4 @@
-package com.defaulty.explorer.model.search;
+package com.defaulty.explorer.model.tree;
 
 import java.io.File;
 

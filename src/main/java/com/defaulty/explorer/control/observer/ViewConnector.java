@@ -1,7 +1,7 @@
 package com.defaulty.explorer.control.observer;
 
 import com.defaulty.explorer.control.ThemeType;
-import com.defaulty.explorer.model.tree.ModelCRUD;
+import com.defaulty.explorer.model.tree.ModelOperations;
 import com.defaulty.explorer.panels.center.ViewType;
 
 /**
@@ -19,13 +19,13 @@ public interface ViewConnector {
     void register(ViewObserver outlet);
 
     /**
-     * Вернуть класс предоставляющий контракт {@code ModelCRUD}
+     * Вернуть класс предоставляющий контракт {@code ModelOperations}
      * в котором описываются методы взаимодействия и операции с
      * элементами.
      *
-     * @return - класс {@code ModelCRUD}.
+     * @return - класс {@code ModelOperations}.
      */
-    ModelCRUD getModelCRUD();
+    ModelOperations getModelCRUD();
 
     /**
      * Вызов изменения стилей (тем).
