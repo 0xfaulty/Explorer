@@ -3,6 +3,7 @@ package com.defaulty.explorer.model.storage;
 import javafx.scene.control.TreeItem;
 
 import java.io.File;
+import java.util.Collection;
 
 /**
  * Интерфейс описывает главное хранилище элементов дерева соответствующее
@@ -45,11 +46,15 @@ public interface ItemStorage {
     void removeItem(File file);
 
     /**
-     * Сделать копию указанного элемента с другим идентификатором.
+     * Получить список всех хранимыеъ элементов.
      *
-     * @param source - копируемый элемент.
-     * @param dest   - новый элемент.
+     * @return список элементов.
      */
-    void copyItem(File source, File dest);
+    Collection<TreeItem<File>> getValues();
+
+    /**
+     * Очистить все хранимые элементы.
+     */
+    void clearStorage();
 
 }

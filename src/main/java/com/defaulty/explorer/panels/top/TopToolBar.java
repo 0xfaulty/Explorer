@@ -39,7 +39,7 @@ public class TopToolBar extends BorderPane implements ViewObserver {
 
     public TopToolBar(ViewConnector connector) {
         connector.register(this);
-        this.modelOperations = connector.getModelCRUD();
+        this.modelOperations = connector.getModelOperations();
         init();
     }
 

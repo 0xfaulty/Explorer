@@ -1,8 +1,12 @@
 package com.defaulty.explorer.control.observer;
 
 import com.defaulty.explorer.control.ThemeType;
+import com.defaulty.explorer.model.search.SearchTask;
 import com.defaulty.explorer.model.tree.ModelOperations;
 import com.defaulty.explorer.panels.center.ViewType;
+import javafx.scene.control.TreeItem;
+
+import java.io.File;
 
 /**
  * Контракт описывающий объект управляющий всеми включенными в него
@@ -25,7 +29,7 @@ public interface ViewConnector {
      *
      * @return - класс {@code ModelOperations}.
      */
-    ModelOperations getModelCRUD();
+    ModelOperations getModelOperations();
 
     /**
      * Вызов изменения стилей (тем).
@@ -40,5 +44,12 @@ public interface ViewConnector {
      * @param t - вид представления {@code ViewType}.
      */
     void changeRightView(ViewType t);
+
+    /**
+     * Запрос загрузки результатов задачи поиска.
+     *
+     * @param task - задача поиска.
+     */
+    void loadSearchResults(SearchTask task);
 
 }

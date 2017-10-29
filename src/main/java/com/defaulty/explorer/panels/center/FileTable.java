@@ -35,8 +35,8 @@ public class FileTable extends BorderPane implements ViewObserver {
     private HashMap<File, FileLabeledCell> cellHashMap = new HashMap<>();
 
     public FileTable(ViewConnector connector) {
-        connector.register(this);
-        this.modelOperations = connector.getModelCRUD();
+        //connector.register(this);
+        this.modelOperations = connector.getModelOperations();
         popup = new FilePopupMenu(connector);
         init();
     }

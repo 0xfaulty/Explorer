@@ -37,6 +37,6 @@ public interface ViewConnectorModel extends ViewConnector {
      *
      * @param fork - новый найденный элемент.
      */
-    void addSearchNode(TreeItem<File> fork);
+    void addNode(TreeItem<File> fork);
 
 }

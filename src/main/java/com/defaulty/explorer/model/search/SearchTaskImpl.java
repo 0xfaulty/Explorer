@@ -1,9 +1,12 @@
 package com.defaulty.explorer.model.search;
 
+import com.defaulty.explorer.model.storage.ItemStorage;
 import com.defaulty.explorer.model.tree.TreeBackPoint;
 import javafx.application.Platform;
+import javafx.scene.control.TreeItem;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +17,10 @@ public class SearchTaskImpl implements Runnable, SearchTask {
 
     private final File root;
     private final String string;
+    private final FileFilter fileFilter;
     private TreeBackPoint backPoint;
+
+    private final ItemStorage mainStorage;
 
     /**
      * Список слушателей события увеличения счётчика найденных элементов.
@@ -24,9 +30,13 @@ public class SearchTaskImpl implements Runnable, SearchTask {
     private int counter = 0;
     private boolean stopFlag = false;
 
-    public SearchTaskImpl(File root, String string, TreeBackPoint backPoint) {
+    private final TreeItem<File> results = new TreeItem<>();
+
+    public SearchTaskImpl(File root, String string, FileFilter fileFilter, ItemStorage mainStorage, TreeBackPoint backPoint) {
         this.root = root;
         this.string = string;
+        this.fileFilter = fileFilter;
+        this.mainStorage = mainStorage;
         this.backPoint = backPoint;
     }
 
@@ -36,20 +46,24 @@ public class SearchTaskImpl implements Runnable, SearchTask {
 
     /**
      * Куруксивный поиск по дочерним элементам.
+     *
      * @param node - текущий элемент.
-     * @param s - строка поиска.
+     * @param s    - строка поиска.
      */
     private void recurseSearch(File node, String s) {
         if (stopFlag) return;
         if (node != null) {
-            if (node.getName().toLowerCase().indexOf(s.toLowerCase()) > 0) {
-                backPoint.accept(node);
-                counter++;
-                Platform.runLater(() -> {
-                            for (Runnable r : counterInputs)
-                                r.run();
-                        }
-                );
+            if (fileFilter.accept(node)) {
+                if (node.getName().toLowerCase().indexOf(s.toLowerCase()) > 0) {
+                    backPoint.accept(node);
+                    results.getChildren().add(mainStorage.getTreeItem(node));
+                    counter++;
+                    Platform.runLater(() -> {
+                                for (Runnable r : counterInputs)
+                                    r.run();
+                            }
+                    );
+                }
             }
             File[] files = node.listFiles();
             if (files != null && files.length > 0) {
@@ -58,6 +72,10 @@ public class SearchTaskImpl implements Runnable, SearchTask {
                 }
             }
         }
+    }
+
+    public String getTaskFullName() {
+        return "Search:" + string;
     }
 
     @Override
@@ -83,6 +101,11 @@ public class SearchTaskImpl implements Runnable, SearchTask {
     @Override
     public void addCountListener(Runnable counterInput) {
         this.counterInputs.add(counterInput);
+    }
+
+    @Override
+    public TreeItem<File> getResults() {
+        return results;
     }
 
 }

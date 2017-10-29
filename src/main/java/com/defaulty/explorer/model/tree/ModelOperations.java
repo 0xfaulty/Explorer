@@ -1,6 +1,7 @@
 package com.defaulty.explorer.model.tree;
 
 import com.defaulty.explorer.control.rescontrol.files.FileOperations;
+import com.defaulty.explorer.model.search.SearchTask;
 import javafx.scene.control.TreeItem;
 
 import java.io.File;
@@ -11,7 +12,7 @@ import java.io.File;
 public interface ModelOperations extends FileOperations {
 
     /**
-     * Вызвов подгрузки к дереву указанной ветки.
+     * Вызов подгрузки к дереву указанной ветки.
      *
      * @param fork - ветка необходимая для подгрузки.
      */
@@ -24,5 +25,12 @@ public interface ModelOperations extends FileOperations {
      * @param s      - ключевое слово поиска.
      */
     void treeSearch(File folder, String s);
+
+    /**
+     * Запрос загрузки результатов задачи поиска.
+     *
+     * @param task - задача поиска.
+     */
+    void loadSearchResults(SearchTask task);
 
 }

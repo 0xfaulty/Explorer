@@ -30,7 +30,7 @@ public class FilePopupMenu extends ContextMenu implements ViewObserver {
 
     public FilePopupMenu(ViewConnector connector) {
         connector.register(this);
-        this.modelOperations = connector.getModelCRUD();
+        this.modelOperations = connector.getModelOperations();
 
         MenuItem openMenu = getMenuItem("Открыть", () -> modelOperations.open(currentItem));
         SeparatorMenuItem separator1 = new SeparatorMenuItem();

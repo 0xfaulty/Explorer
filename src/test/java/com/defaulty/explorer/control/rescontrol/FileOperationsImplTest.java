@@ -50,8 +50,8 @@ public class FileOperationsImplTest {
     public void rename() throws Exception {
         File renameFromFile = new File("src/test/resources/test.txt");
         File renameToFile = new File("src/test/resources/test2.txt");
-        assertTrue(fo.rename(renameFromFile,renameToFile));
-        assertTrue(fo.rename(renameToFile,renameFromFile));
+        assertTrue(fo.rename(renameFromFile, renameToFile));
+        assertTrue(fo.rename(renameToFile, renameFromFile));
     }
 
     @Test

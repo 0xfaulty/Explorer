@@ -42,8 +42,8 @@ public class FileGrid extends ScrollPane implements ViewObserver {
     private String style = "";
 
     public FileGrid(ViewConnector connector) {
-        connector.register(this);
-        this.modelOperations = connector.getModelCRUD();
+        //connector.register(this);
+        this.modelOperations = connector.getModelOperations();
 
         popup = new FilePopupMenu(connector);
         tilePane.setPadding(new Insets(10));

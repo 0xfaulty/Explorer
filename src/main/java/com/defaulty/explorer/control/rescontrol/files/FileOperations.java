@@ -30,7 +30,7 @@ public interface FileOperations {
      *
      * @param destParentFolder - узел для вставки
      */
-    void paste(File destParentFolder);
+    boolean paste(File destParentFolder);
 
     /**
      * Удалить элемент.

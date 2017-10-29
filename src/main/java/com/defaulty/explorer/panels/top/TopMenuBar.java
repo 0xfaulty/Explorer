@@ -19,7 +19,7 @@ public class TopMenuBar extends MenuBar implements ViewObserver {
 
     public TopMenuBar(ViewConnector connector) {
         connector.register(this);
-        modelOperations = connector.getModelCRUD();
+        modelOperations = connector.getModelOperations();
 
         Menu menuFile = new Menu("Файл");
         MenuItem createNewFolder = new MenuItem("Создать папку");
@@ -42,7 +42,7 @@ public class TopMenuBar extends MenuBar implements ViewObserver {
         darkTheme.setOnAction(event -> connector.changeTheme(ThemeType.DARK));
         MenuItem lightTheme = new MenuItem("Светлая тема");
         lightTheme.setOnAction(event -> connector.changeTheme(ThemeType.LIGHT));
-        menuViewThemes.getItems().addAll(darkTheme, lightTheme);
+        menuViewThemes.getItems().addAll(lightTheme);
 
         menuView.getItems().addAll(menuViewViews, menuViewThemes);
 

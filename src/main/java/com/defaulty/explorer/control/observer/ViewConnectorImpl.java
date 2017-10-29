@@ -57,7 +57,7 @@ public class ViewConnectorImpl implements ViewConnectorModel {
     }
 
     @Override
-    public void addSearchNode(TreeItem<File> fork) {
+    public void addNode(TreeItem<File> fork) {
         ViewEvent event = new ViewEventImpl(EventType.ADD_NODE);
         event.setFork(fork);
         sendEvent(event);
@@ -92,7 +92,12 @@ public class ViewConnectorImpl implements ViewConnectorModel {
     }
 
     @Override
-    public ModelOperations getModelCRUD() {
+    public void loadSearchResults(SearchTask task) {
+        treeModel.loadSearchResults(task);
+    }
+
+    @Override
+    public ModelOperations getModelOperations() {
         return treeModel;
     }
 

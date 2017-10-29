@@ -1,14 +1,11 @@
 package com.defaulty.explorer.control.rescontrol.files;
 
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Optional;
 
 /**
  * Класс поддерживающий контракт {@code FileOperations}.
@@ -40,22 +37,15 @@ public class FileOperationsImpl implements FileOperations {
     }
 
     @Override
-    public void paste(File destParentFolder) {
-        if (buffFile != null && destParentFolder.isDirectory()) {
-            File destFile = new File(destParentFolder.getAbsolutePath() + "\\" + buffFile.getName());
-            if (!buffFile.getAbsoluteFile().equals(destFile.getAbsoluteFile())) {
-
-                if (!destFile.exists() || warningAlert(
-                        "Вставка", "\"" + buffFile.getName() + "\" уже существует, заменить?")) {
-                    delete(destFile, true);
-                    copyFile(buffFile, destFile);
-                    if (cutFlag) {
-                        delete(buffFile, true);
-                        buffFile = null;
-                    }
-                }
+    public boolean paste(File destFile) {
+        if (copyFile(buffFile, destFile)) {
+            if (cutFlag) {
+                delete(buffFile);
+                buffFile = null;
             }
+            return true;
         }
+        return false;
     }
 
     /**
@@ -64,34 +54,26 @@ public class FileOperationsImpl implements FileOperations {
      * @param sourceFile - источник.
      * @param destFile   - место назначения.
      */
-    private void copyFile(File sourceFile, File destFile) {
+    private boolean copyFile(File sourceFile, File destFile) {
         try {
-            Files.copy(sourceFile.toPath(), destFile.toPath());
+            if (sourceFile.isDirectory())
+                FileUtils.copyDirectory(sourceFile, destFile);
+            else
+                FileUtils.copyFile(sourceFile, destFile);
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Вывод диалога инфомации с кнопками да и нет.
-     *
-     * @param header   - заголовок.
-     * @param question - вопрос диалога.
-     * @return нажата ли кнопка да.
-     */
-    private boolean warningAlert(String header, String question) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Диалог информации");
-        alert.setHeaderText(header);
-        alert.setContentText(question);
-
-        Optional<ButtonType> result = alert.showAndWait();
-        return result.filter(buttonType -> buttonType == ButtonType.OK).isPresent();
+        return false;
     }
 
     @Override
     public boolean rename(File sourceFile, File destFile) {
-        return !sourceFile.getAbsoluteFile().equals(destFile.getAbsoluteFile()) && sourceFile.renameTo(destFile);
+        if (buffFile != null) {
+            if (sourceFile.getAbsoluteFile().equals(buffFile.getAbsoluteFile()))
+                buffFile = null;
+        }
+        return (!sourceFile.getAbsoluteFile().equals(destFile.getAbsoluteFile()) && sourceFile.renameTo(destFile));
     }
 
     /**
@@ -117,30 +99,29 @@ public class FileOperationsImpl implements FileOperations {
 
     @Override
     public boolean delete(File file) {
-        return delete(file, false);
-    }
+        if (buffFile != null) {
+            if (file.getAbsoluteFile().equals(buffFile.getAbsoluteFile()))
+                buffFile = null;
+        }
 
-    /**
-     * Дополнительная функция для единообразной обработки внутреннего,
-     * как например при вызове "cut", так и обычного удаления.
-     * При отсутствии флага форсирования удаляет без вывода предупреждений.
-     *
-     * @param file  - файл для удаления.
-     * @param force - флаг отвечающий за форсирование, т.е. удаление без запроса.
-     */
-    private boolean delete(File file, boolean force) {
-        if (force)
-            return file.delete();
-        else if (warningAlert("Удаление", "Удалить \"" + file.getName() + "\"?"))
-            return file.delete();
-        return false;
+        if (file.isDirectory()) {
+            try {
+                FileUtils.deleteDirectory(file);
+                return true;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return false;
+        } else {
+            return (file.delete());
+        }
     }
 
     @Override
     public boolean createFolderIn(File rootFolder) {
         File newFolder = new File(rootFolder.getAbsolutePath() + "\\Новая папка");
         newFolder = findEmptyName(newFolder);
-        return newFolder != null && newFolder.mkdirs();
+        return (newFolder != null && newFolder.mkdirs());
     }
 
     @Override

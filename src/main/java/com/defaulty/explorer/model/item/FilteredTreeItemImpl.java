@@ -33,9 +33,7 @@ public class FilteredTreeItemImpl extends TreeItem<File> implements FilteredTree
     public FilteredTreeItemImpl(File file, TreeBackPoint changeBackPoint) {
         super(file);
 
-        itemSize = file.isDirectory() ? "" : readableSize(file.length());
-        itemType = TypeSetter.getFileType(file);
-        itemData = new SimpleDateFormat().format(new Date(file.lastModified()));
+        updateItem(file);
         this.changeBackPoint = changeBackPoint;
 
         Runnable eventHandler = () -> {
@@ -97,6 +95,14 @@ public class FilteredTreeItemImpl extends TreeItem<File> implements FilteredTree
 
     }
 
+    @Override
+    public void updateItem(File file) {
+        setValue(file);
+        itemSize = file.isDirectory() ? "" : readableSize(file.length());
+        itemType = TypeSetter.getFileType(file);
+        itemData = new SimpleDateFormat().format(new Date(file.lastModified()));
+    }
+
     public String getItemSize() {
         return itemSize;
     }
@@ -114,7 +120,7 @@ public class FilteredTreeItemImpl extends TreeItem<File> implements FilteredTree
         FilteredTreeItemImpl fti = new FilteredTreeItemImpl(getValue(), changeBackPoint);
         fti.getChildren().setAll(getChildren());
         fti.fileChildren.setAll(fileChildren);
-        fti.iconType = iconType;
+        fti.iconType = FolderIcons.UNLOAD_FOLDER;
 
         return fti;
     }

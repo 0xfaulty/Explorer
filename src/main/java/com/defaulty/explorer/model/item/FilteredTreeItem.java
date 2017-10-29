@@ -35,4 +35,6 @@ public interface FilteredTreeItem extends Cloneable {
 
     TreeItem<File> getClone();
 
+    void updateItem(File file);
+
 }

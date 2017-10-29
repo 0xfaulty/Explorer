@@ -11,6 +11,7 @@ import javafx.scene.control.TreeItem;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.Collection;
 import java.util.HashMap;
 
 /**
@@ -19,7 +20,7 @@ import java.util.HashMap;
  */
 public class ItemStorageImpl implements ItemStorage {
 
-    private static HashMap<String, TreeItem<File>> treeHash = new HashMap<>();
+    private HashMap<String, TreeItem<File>> treeHash = new HashMap<>();
 
     /**
      * Фильтр подгружаемых дочерних файлов .
@@ -33,7 +34,7 @@ public class ItemStorageImpl implements ItemStorage {
     }
 
     @Override
-    public synchronized void createChildren(File file) {
+    public void createChildren(File file) {
         TreeItem<File> fork = getTreeItem(file);
 
         ObservableList<TreeItem<File>> folderChildren = FXCollections.observableArrayList();
@@ -88,25 +89,33 @@ public class ItemStorageImpl implements ItemStorage {
 
     @Override
     public void removeItem(File file) {
+        recursiveRemove(getTreeItem(file));
         treeHash.remove(file.getAbsolutePath());
     }
 
-    @Override
-    public void copyItem(File source, File dest) {
-        TreeItem<File> sourceItem = treeHash.get(source.getAbsolutePath());
-        TreeItem<File> newItem;
-        TreeItem<File> parent = sourceItem.getParent();
-        if (sourceItem instanceof FilteredTreeItemImpl) {
-            newItem = ((FilteredTreeItemImpl) sourceItem).getClone();
-            newItem.setValue(dest);
-        } else {
-            newItem = new TreeItem<>(dest);
-            newItem.setValue(dest);
-            newItem.getChildren().setAll(sourceItem.getChildren());
+    /**
+     * Рекурсивное удаление всех всложенных элементов.
+     *
+     * @param item - родительский элемент.
+     */
+    private void recursiveRemove(TreeItem<File> item) {
+        if (item.getChildren() != null) {
+            for (TreeItem<File> file : item.getChildren()) {
+                recursiveRemove(file);
+                if (file.getValue() != null)
+                    treeHash.remove(file.getValue().getAbsolutePath());
+            }
         }
-        parent.getChildren().add(newItem);
-        treeHash.put(dest.getAbsolutePath(), newItem);
     }
 
+    @Override
+    public Collection<TreeItem<File>> getValues() {
+        return treeHash.values();
+    }
+
+    @Override
+    public void clearStorage() {
+        treeHash.clear();
+    }
 
 }

@@ -8,6 +8,7 @@ import com.defaulty.explorer.panels.center.ViewType;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Font;
@@ -20,6 +21,8 @@ public class BottomBar extends BorderPane implements ViewObserver {
 
     private HBox taskPane = new HBox();
 
+    private final ViewConnector connector;
+
     /**
      * Конструктор нижней панели.
      *
@@ -27,6 +30,7 @@ public class BottomBar extends BorderPane implements ViewObserver {
      */
     public BottomBar(ViewConnector connector) {
         connector.register(this);
+        this.connector = connector;
 
         Button tableViewButt = new Button("T");
         tableViewButt.setOnAction(event -> connector.changeRightView(ViewType.TABLE));
@@ -91,6 +95,10 @@ public class BottomBar extends BorderPane implements ViewObserver {
             String style = "-fx-background-color: #cacaca";
 
             label = new Label(task.getKeyWord());
+            label.setOnMouseClicked((e) -> {
+                if (e.getButton() == MouseButton.PRIMARY)
+                    connector.loadSearchResults(task);
+            });
             label.setFont(new Font(11));
             label.setStyle(style);
             labelCount = new Label(": 0");

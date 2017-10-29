@@ -10,10 +10,13 @@ import com.defaulty.explorer.model.search.SearchTask;
 import com.defaulty.explorer.model.search.SearchTaskImpl;
 import com.defaulty.explorer.model.storage.ItemStorageImpl;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TreeItem;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.Optional;
 
 /**
  * Класс поддерживающий контракт {@code TreeModel}.
@@ -27,8 +30,10 @@ public class TreeModelImpl implements TreeModel {
     private ImageSetter imageSetter = new ImageSetter();
 
     private boolean firstNode = true;
+    private FileFilter fileFilter;
 
     public TreeModelImpl(FileFilter fileFilter) {
+        this.fileFilter = fileFilter;
         storage = new ItemStorageImpl(fileFilter, this::itemChange);
     }
 
@@ -79,10 +84,15 @@ public class TreeModelImpl implements TreeModel {
         if (s.equals(""))
             viewConnector.changeFork(storage.getTreeItem(folder));
         else {
-            SearchTask searchTask = new SearchTaskImpl(folder, s, this::searchBackPoint);
+            SearchTask searchTask = new SearchTaskImpl(folder, s, fileFilter, storage, this::searchBackPoint);
             new Thread(searchTask).start();
             viewConnector.sendSearchTask(searchTask);
         }
+    }
+
+    @Override
+    public void loadSearchResults(SearchTask task) {
+        viewConnector.changeFork(task.getResults());
     }
 
     /**
@@ -91,7 +101,24 @@ public class TreeModelImpl implements TreeModel {
      * @param file - новый найденный элемент.
      */
     private synchronized void searchBackPoint(File file) {
-        Platform.runLater(() -> viewConnector.addSearchNode(storage.getTreeItem(file)));
+        Platform.runLater(() -> viewConnector.addNode(storage.getTreeItem(file)));
+    }
+
+    /**
+     * Вывод диалога инфомации с кнопками да и нет.
+     *
+     * @param header   - заголовок.
+     * @param question - вопрос диалога.
+     * @return нажата ли кнопка да.
+     */
+    private boolean warningAlert(String header, String question) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Диалог информации");
+        alert.setHeaderText(header);
+        alert.setContentText(question);
+
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.filter(buttonType -> buttonType == ButtonType.OK).isPresent();
     }
 
     @Override
@@ -110,25 +137,35 @@ public class TreeModelImpl implements TreeModel {
     }
 
     @Override
-    public void paste(File destParentFolder) {
+    public boolean paste(File destParentFolder) {
         File buffFile = fo.getBuffFile();
-        storage.copyItem(buffFile, new File(
-                destParentFolder.getAbsolutePath() + "\\" + buffFile.getName()));
-        if (fo.isCutFlag())
-            storage.removeItem(buffFile);
-        fo.paste(destParentFolder);
-        loadFork(destParentFolder);
+        File destFile = new File(destParentFolder.getAbsolutePath() + "\\" + buffFile.getName());
+
+        if (!buffFile.getAbsoluteFile().equals(destFile.getAbsoluteFile())) {
+            if (destFile.exists() && warningAlert(
+                    "Вставка", "\"" + buffFile.getName() + "\" уже существует, заменить?")) {
+                fo.delete(destFile);
+            }
+            if (fo.paste(destFile)) {
+                if (fo.isCutFlag()) storage.removeItem(buffFile);
+            }
+            loadFork(destParentFolder);
+        }
+
+        return true;
     }
 
     @Override
     public boolean delete(File file) {
-        if (fo.delete(file)) {
-            TreeItem<File> fork = storage.getTreeItem(file);
-            File reloadFolder = fork.getParent().getValue();
-            removeTreeChild(fork, fork.getParent());
-            storage.removeItem(file);
-            loadFork(reloadFolder);
-            return true;
+        if (warningAlert("Удаление", "Удалить \"" + file.getName() + "\"?")) {
+            if (fo.delete(file)) {
+                TreeItem<File> fork = storage.getTreeItem(file);
+                File reloadFolder = fork.getParent().getValue();
+                removeTreeChild(fork, fork.getParent());
+                storage.removeItem(file);
+                loadFork(reloadFolder);
+                return true;
+            }
         }
         return false;
     }
@@ -149,10 +186,13 @@ public class TreeModelImpl implements TreeModel {
 
     @Override
     public boolean rename(File sourceFile, File destFile) {
-        if (fo.rename(sourceFile, destFile)) {
-            storage.copyItem(sourceFile, destFile);
-            storage.removeItem(sourceFile);
-            loadFork(storage.getTreeItem(destFile).getParent().getValue());
+        if (!fo.rename(sourceFile, destFile)) {
+            TreeItem<File> item = storage.getTreeItem(sourceFile);
+            if (item instanceof FilteredTreeItem)
+                ((FilteredTreeItem) item).updateItem(destFile);
+            else
+                item.setValue(destFile);
+            loadFork(item.getParent().getValue());
             return true;
         }
         return false;

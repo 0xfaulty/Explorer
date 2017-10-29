@@ -31,7 +31,7 @@ public class FolderTree extends BorderPane implements ViewObserver {
 
     public FolderTree(ViewConnector connector) {
         connector.register(this);
-        this.modelOperations = connector.getModelCRUD();
+        this.modelOperations = connector.getModelOperations();
         setCenter(tree);
         setMinWidth(200);
         SplitPane.setResizableWithParent(this, false);
