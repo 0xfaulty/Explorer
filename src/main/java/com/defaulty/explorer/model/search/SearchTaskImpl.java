@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Класс поддерживающий контракт {@code SearchTask} и {@code Runnable}
+ * Класс поддерживающий контракт {@code SearchTask} и {@code Runnable}.
  */
 public class SearchTaskImpl implements Runnable, SearchTask {
 
@@ -21,6 +21,8 @@ public class SearchTaskImpl implements Runnable, SearchTask {
     private TreeBackPoint backPoint;
 
     private final ItemStorage mainStorage;
+
+    private boolean sendNodes = true;
 
     /**
      * Список слушателей события увеличения счётчика найденных элементов.
@@ -41,6 +43,7 @@ public class SearchTaskImpl implements Runnable, SearchTask {
     }
 
     public void run() {
+        results.setValue(new File(getTaskFullName()));
         recurseSearch(root, string);
     }
 
@@ -55,10 +58,10 @@ public class SearchTaskImpl implements Runnable, SearchTask {
         if (node != null) {
             if (fileFilter.accept(node)) {
                 if (node.getName().toLowerCase().indexOf(s.toLowerCase()) > 0) {
-                    backPoint.accept(node);
-                    results.getChildren().add(mainStorage.getTreeItem(node));
+                    if (sendNodes) backPoint.accept(node);
                     counter++;
                     Platform.runLater(() -> {
+                                results.getChildren().add(mainStorage.getTreeItem(node));
                                 for (Runnable r : counterInputs)
                                     r.run();
                             }
@@ -108,4 +111,7 @@ public class SearchTaskImpl implements Runnable, SearchTask {
         return results;
     }
 
+    public void setSendNodes(boolean sendNodes) {
+        this.sendNodes = sendNodes;
+    }
 }

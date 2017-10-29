@@ -7,6 +7,7 @@ import com.defaulty.explorer.control.rescontrol.image.CustomIcons;
 import com.defaulty.explorer.model.search.SearchTask;
 import com.defaulty.explorer.panels.center.ViewType;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
@@ -14,6 +15,8 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Font;
+
+import java.io.File;
 
 /**
  * Нижняя панель. Включает в себя панель задачь поиска и
@@ -65,6 +68,16 @@ public class BottomBar extends BorderPane implements ViewObserver {
                 taskPane.getChildren().add(taskLabel);
                 if (taskPane.getChildren().size() > 5)
                     taskPane.getChildren().remove(0);
+                break;
+            case CHANGE_FORK:
+                for (Node t : taskPane.getChildren()) {
+                    if (t instanceof SearchTaskLabel) {
+                        File file = event.getFork().getValue();
+                        if (file != null) {
+                            ((SearchTaskLabel) t).changeSendStatus(file.getPath());
+                        }
+                    }
+                }
                 break;
         }
     }
@@ -129,6 +142,14 @@ public class BottomBar extends BorderPane implements ViewObserver {
 
         Runnable getStopPoint() {
             return task::stop;
+        }
+
+        public void changeSendStatus(String s) {
+            if (s.equals(task.getTaskFullName()))
+                task.setSendNodes(true);
+            else
+                task.setSendNodes(false);
+
         }
     }
 

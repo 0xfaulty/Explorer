@@ -58,4 +58,11 @@ public interface SearchTask extends Runnable {
      */
     String getTaskFullName();
 
+    /**
+     * Флаг отправки единичных найденных элементов.
+     *
+     * @param sendNodes - флаг.
+     */
+    void setSendNodes(boolean sendNodes);
+
 }
