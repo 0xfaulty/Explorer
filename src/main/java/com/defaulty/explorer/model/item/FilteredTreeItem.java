@@ -33,8 +33,6 @@ public interface FilteredTreeItem extends Cloneable {
      */
     FolderIcons getIconType();
 
-    TreeItem<File> getClone();
-
     void updateItem(File file);
 
 }

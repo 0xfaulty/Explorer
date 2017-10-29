@@ -50,7 +50,7 @@ public class TopMenuBar extends MenuBar implements ViewObserver {
         MenuItem about = new MenuItem("О программе");
         about.setOnAction(event -> System.out.println("about call"));
         menuHelp.getItems().add(about);
-        getMenus().addAll(menuFile, menuEdit, menuView, menuHelp);
+        getMenus().addAll(menuFile, menuView, menuHelp);
     }
 
     @Override

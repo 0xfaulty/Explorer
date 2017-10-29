@@ -118,4 +118,10 @@ public class ItemStorageImpl implements ItemStorage {
         treeHash.clear();
     }
 
+    @Override
+    public void changeKey(File oldKey, File newKey) {
+        TreeItem<File> item = getTreeItem(oldKey);
+        treeHash.put(newKey.getAbsolutePath(), item);
+    }
+
 }

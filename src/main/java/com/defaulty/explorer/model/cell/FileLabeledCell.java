@@ -77,13 +77,15 @@ public class FileLabeledCell implements LabeledCell {
                 }
             }
 
+            /**
+             * Создать текстовое поле для редактирования имени.
+             */
             private void createTextField() {
                 textField = new TextField(getText());
                 textField.setMinWidth(this.getWidth() - this.getGraphicTextGap() * 2);
                 textField.focusedProperty().addListener((arg0, arg1, arg2) -> {
                     if (!arg2) {
                         rename(textField.getText(), getItem(), this);
-                        updateItem(getItem(), false);
                     }
                 });
 
@@ -93,7 +95,6 @@ public class FileLabeledCell implements LabeledCell {
                         if (value != null) {
                             rename(textField.getText(), getItem(), this);
                         }
-                        updateItem(getItem(), false);
                     } else if (t.getCode() == KeyCode.ESCAPE) {
                         cancelEdit();
                     }
@@ -131,14 +132,25 @@ public class FileLabeledCell implements LabeledCell {
         return labeled;
     }
 
+    /**
+     * Переименовать объект в ячейке.
+     * @param newName - новое имя.
+     * @param sourceFile - переименуемый объект.
+     * @param cell - ячейка.
+     */
     private void rename(String newName, File sourceFile, TableCell<TreeItem<File>, File> cell) {
         if (fo != null) {
-            String path = sourceFile.getParentFile().getAbsolutePath();
+            String path = sourceFile.getParentFile().getPath();
             File newFile = new File(path + "\\" + newName);
-            if (fo.rename(sourceFile, newFile)) {
-                cell.setItem(newFile);
-                updateView(tableCell, newFile, false);
-            }
+            if (!sourceFile.getName().equals(newName)) {
+                if (sourceFile.exists() && !newFile.exists()) {
+                    if (fo.rename(sourceFile, newFile)) {
+                        cell.setItem(newFile);
+                        updateView(tableCell, newFile, false);
+                    }
+                }
+            } else
+                cell.cancelEdit();
         }
     }
 

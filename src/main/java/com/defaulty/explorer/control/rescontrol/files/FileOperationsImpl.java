@@ -73,7 +73,7 @@ public class FileOperationsImpl implements FileOperations {
             if (sourceFile.getAbsoluteFile().equals(buffFile.getAbsoluteFile()))
                 buffFile = null;
         }
-        return (!sourceFile.getAbsoluteFile().equals(destFile.getAbsoluteFile()) && sourceFile.renameTo(destFile));
+        return sourceFile.renameTo(destFile);
     }
 
     /**
@@ -103,7 +103,6 @@ public class FileOperationsImpl implements FileOperations {
             if (file.getAbsoluteFile().equals(buffFile.getAbsoluteFile()))
                 buffFile = null;
         }
-
         if (file.isDirectory()) {
             try {
                 FileUtils.deleteDirectory(file);

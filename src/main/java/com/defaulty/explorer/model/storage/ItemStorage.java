@@ -57,4 +57,12 @@ public interface ItemStorage {
      */
     void clearStorage();
 
+    /**
+     * Поменять ключ доступа к элементу хранилища.
+     *
+     * @param oldKey - старый ключ.
+     * @param newKey - новый ключ.
+     */
+    void changeKey(File oldKey, File newKey);
+
 }

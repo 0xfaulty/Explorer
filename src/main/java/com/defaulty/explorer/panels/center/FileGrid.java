@@ -11,6 +11,8 @@ import com.defaulty.explorer.model.cell.LabeledCell;
 import com.defaulty.explorer.model.item.FilteredTreeItem;
 import com.defaulty.explorer.model.tree.ModelOperations;
 import com.defaulty.explorer.panels.FilePopupMenu;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -197,6 +199,10 @@ public class FileGrid extends ScrollPane implements ViewObserver {
             });
 
             setAlignment(Pos.CENTER);
+
+            setOnMouseEntered(e -> setStyle("-fx-background-color: #9dc6e0"));
+            setOnMouseExited(e -> setStyle("-fx-background-color: #f4f5f7"));
+
         }
 
         /**

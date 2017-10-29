@@ -186,13 +186,15 @@ public class TreeModelImpl implements TreeModel {
 
     @Override
     public boolean rename(File sourceFile, File destFile) {
-        if (!fo.rename(sourceFile, destFile)) {
-            TreeItem<File> item = storage.getTreeItem(sourceFile);
+        fo.rename(sourceFile, destFile);
+        if (destFile.exists()) {
+            storage.changeKey(sourceFile, destFile);
+            TreeItem<File> item = storage.getTreeItem(destFile);
             if (item instanceof FilteredTreeItem)
                 ((FilteredTreeItem) item).updateItem(destFile);
             else
                 item.setValue(destFile);
-            loadFork(item.getParent().getValue());
+            loadFork(sourceFile.getParentFile());
             return true;
         }
         return false;

@@ -95,7 +95,7 @@ public class CustomIcons {
      * @param height - требуемая высота.
      * @return - изображение.
      */
-    private Image getImageResource(String patch, int width, int height) {
+    public Image getImageResource(String patch, int width, int height) {
         Image img = null;
         try {
             img = new Image(App.class.getClassLoader().getResourceAsStream(patch),
